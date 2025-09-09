@@ -1,0 +1,6 @@
+﻿services:
+  integrationplatform:
+    image: integrationplatform
+    build:
+      context: .
+      dockerfile: IntegrationPlatform/Dockerfile

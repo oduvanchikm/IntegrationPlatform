@@ -24,4 +24,11 @@
       <PackageReference Include="Swashbuckle.AspNetCore" Version="8.0.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="IntegrationPlatform.Core\Abstractions\" />
+      <Folder Include="IntegrationPlatform.Core\Sevices\" />
+      <Folder Include="IntegrationPlatform.Infrastructure\Connectors\" />
+      <Folder Include="IntegrationPlatform.Infrastructure\Database\Migrations\" />
+    </ItemGroup>
+
 </Project>

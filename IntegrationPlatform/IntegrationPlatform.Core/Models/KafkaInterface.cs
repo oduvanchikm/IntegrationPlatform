@@ -4,7 +4,7 @@ public class KafkaInterface
 {
     public int Id { get; set; }
     public string BootstrapServer { get; set; }
-    public string UserName { get; set; }
+    public string Username { get; set; }
     public string Password { get; set; }
     public string TopicName { get; set; }
     

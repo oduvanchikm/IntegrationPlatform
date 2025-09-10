@@ -10,6 +10,6 @@ public class ProductInterface
     public Product Product { get; set; }
     
     public DatabaseInterface? DatabaseInterface { get; set; }
-    public ApiInterface ApiInterface { get; set; }
-    public KafkaInterface KafkaInterface { get; set; }
+    public ApiInterface? ApiInterface { get; set; }
+    public KafkaInterface? KafkaInterface { get; set; }
 }

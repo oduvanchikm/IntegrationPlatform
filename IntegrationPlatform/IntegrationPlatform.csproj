@@ -25,10 +25,13 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="IntegrationPlatform.Core\Abstractions\" />
-      <Folder Include="IntegrationPlatform.Core\Sevices\" />
-      <Folder Include="IntegrationPlatform.Infrastructure\Connectors\" />
-      <Folder Include="IntegrationPlatform.Infrastructure\Database\Migrations\" />
+      <Folder Include="Publication.API\DatabaseConnection\Migrations\" />
+      <Folder Include="Search.API\Controllers\" />
+      <Folder Include="Search.API\Models\" />
+      <Folder Include="Search.API\Services\" />
+      <Folder Include="Subscription.API\Controllers\" />
+      <Folder Include="Subscription.API\Models\" />
+      <Folder Include="Subscription.API\Services\" />
     </ItemGroup>
 
 </Project>

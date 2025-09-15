@@ -1,8 +1,8 @@
-using IntegrationPlatform.IntegrationPlatform.Core.Models;
+using IntegrationPlatform.Publication.API.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace IntegrationPlatform.IntegrationPlatform.Infrastructure.Database.Configurations;
+namespace IntegrationPlatform.Publication.API.DatabaseConnection.Configurations;
 
 public class KafkaInterfaceConfiguration : IEntityTypeConfiguration<KafkaInterface>
 {
@@ -20,15 +20,12 @@ public class KafkaInterfaceConfiguration : IEntityTypeConfiguration<KafkaInterfa
             .IsRequired()
             .HasMaxLength(100);
 
-        builder.Property(k => k.BootstrapServer)
+        builder.Property(k => k.BootstrapServers)
             .IsRequired()
             .HasMaxLength(500);
 
         builder.Property(k => k.TopicName)
             .IsRequired()
             .HasMaxLength(100);
-
-        builder.HasIndex(e => e.ProductInterfaceId)
-            .IsUnique();
     }
 }

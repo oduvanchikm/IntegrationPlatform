@@ -1,15 +1,14 @@
-namespace IntegrationPlatform.IntegrationPlatform.Core.Models;
+using IntegrationPlatform.Common.Models;
 
-public class ApiInterface
+namespace IntegrationPlatform.Publication.API.Models;
+
+public class ApiInterface : DataInterface
 {
-    public int Id { get; set; }
     public string Host { get; set; }
     public string Port { get; set; }
     public string Endpoint { get; set; }
     public string Username { get; set; }
     public string Password { get; set; }
     public string Token { get; set; }
-    
-    public int ProductInterfaceId { get; set; }
-    public ProductInterface ProductInterface { get; set; }
+    public override object GetConnectionDetails() => this;
 }

@@ -1,8 +1,9 @@
-namespace IntegrationPlatform.IntegrationPlatform.Core.Models;
+using IntegrationPlatform.Common.Models;
 
-public class DatabaseInterface
+namespace IntegrationPlatform.Publication.API.Models;
+
+public class DatabaseInterface : DataInterface
 {
-    public int Id { get; set; }
     public string Host { get; set; }
     public string Port { get; set; }
     public string Username { get; set; }
@@ -10,6 +11,5 @@ public class DatabaseInterface
     public string DatabaseName { get; set; }
     public string Scheme { get; set; }
     
-    public int ProductInterfaceId { get; set; }
-    public ProductInterface ProductInterface { get; set; }
+    public override object GetConnectionDetails() => this;
 }

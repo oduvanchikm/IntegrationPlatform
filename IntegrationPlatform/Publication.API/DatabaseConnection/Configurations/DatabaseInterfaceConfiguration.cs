@@ -1,8 +1,8 @@
-using IntegrationPlatform.IntegrationPlatform.Core.Models;
+using IntegrationPlatform.Publication.API.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace IntegrationPlatform.IntegrationPlatform.Infrastructure.Database.Configurations;
+namespace IntegrationPlatform.Publication.API.DatabaseConnection.Configurations;
 
 public class DatabaseInterfaceConfiguration : IEntityTypeConfiguration<DatabaseInterface>
 {
@@ -35,8 +35,5 @@ public class DatabaseInterfaceConfiguration : IEntityTypeConfiguration<DatabaseI
         builder.Property(e => e.Port)
             .IsRequired()
             .HasMaxLength(10);
-
-        builder.HasIndex(e => e.ProductInterfaceId)
-            .IsUnique();
     }
 }

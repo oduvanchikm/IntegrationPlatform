@@ -1,5 +1,4 @@
 using IntegrationPlatform.Common.Enums;
-using IntegrationPlatform.Publication.API.Models;
 
 namespace IntegrationPlatform.Common.Models;
 

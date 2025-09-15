@@ -9,7 +9,7 @@ public class DataInterfaceConfiguration : IEntityTypeConfiguration<DataInterface
 {
     public void Configure(EntityTypeBuilder<DataInterface> builder)
     {
-        builder.ToTable("DataInterfaces");
+        builder.ToTable("DataInterfaces", "publication");
 
         builder.HasKey(p => p.Id);
 

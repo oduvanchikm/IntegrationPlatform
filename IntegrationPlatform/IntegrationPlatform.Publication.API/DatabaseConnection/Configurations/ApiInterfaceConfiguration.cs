@@ -8,7 +8,7 @@ public class ApiInterfaceConfiguration : IEntityTypeConfiguration<ApiInterface>
 {
     public void Configure(EntityTypeBuilder<ApiInterface> builder)
     {
-        builder.ToTable("ApiInterface");
+        builder.ToTable("ApiInterface", "publication");
 
         builder.HasKey(e => e.Id);
 

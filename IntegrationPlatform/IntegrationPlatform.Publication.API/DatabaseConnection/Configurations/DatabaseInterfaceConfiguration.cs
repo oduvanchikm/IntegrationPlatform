@@ -8,7 +8,7 @@ public class DatabaseInterfaceConfiguration : IEntityTypeConfiguration<DatabaseI
 {
     public void Configure(EntityTypeBuilder<DatabaseInterface> builder)
     {
-        builder.ToTable("DatabaseInterface");
+        builder.ToTable("DatabaseInterface", "publication");
 
         builder.HasKey(e => e.Id);
 

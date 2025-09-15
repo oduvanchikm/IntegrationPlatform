@@ -1,6 +1,49 @@
 ﻿services:
-  integrationplatform:
-    image: integrationplatform
+  postgres:
+    image: postgres:15
+    container_name: integration-platform-postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: integration_platform
+      POSTGRES_MULTIPLE_DATABASES: publication_db,subscription_db
+    ports:
+      - "5480:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+
+  publication-api:
     build:
-      context: .
-      dockerfile: IntegrationPlatform/Dockerfile
+      context: ./IntegrationPlatform.Publication.API
+      dockerfile: Dockerfile
+    container_name: publication-api
+    environment:
+      - ConnectionStrings__PublicationDbContext=Host=postgres;Port=5432;Database=integration_platform;Username=admin;Password=password;Search Path=publication
+    depends_on:
+      - postgres
+    ports:
+      - "5001:80"
+
+#  discovery-api:
+#    build:
+#      context: ./IntegrationPlatform.Search.API
+#      dockerfile: Dockerfile
+#    container_name: discovery-api
+#    ports:
+#      - "5002:80"
+
+#  subscription-api:
+#    build:
+#      context: ./IntegrationPlatform.Subscription.API
+#      dockerfile: Dockerfile
+#    container_name: subscription-api
+#    environment:
+#      - ConnectionStrings__SubscriptionDbContext=Host=postgres;Port=5432;Database=integration_platform;Username=admin;Password=password;Search Path=subscription
+#    depends_on:
+#      - postgres
+#    ports:
+#      - "5003:80"
+
+volumes:
+  postgres_data:

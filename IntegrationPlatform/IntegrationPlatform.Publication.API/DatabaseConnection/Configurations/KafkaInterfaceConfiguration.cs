@@ -8,7 +8,7 @@ public class KafkaInterfaceConfiguration : IEntityTypeConfiguration<KafkaInterfa
 {
     public void Configure(EntityTypeBuilder<KafkaInterface> builder)
     {
-        builder.ToTable("KafkaInterface");
+        builder.ToTable("KafkaInterface", "publication");
 
         builder.HasKey(c => c.Id);
 

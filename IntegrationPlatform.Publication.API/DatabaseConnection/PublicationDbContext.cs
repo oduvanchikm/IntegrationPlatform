@@ -16,21 +16,21 @@ public class PublicationDbContext(DbContextOptions<PublicationDbContext> options
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("publication");
-    
+
         modelBuilder.Entity<DataInterface>().ToTable("DataInterfaces");
         modelBuilder.Entity<ApiInterface>().ToTable("ApiInterface");
         modelBuilder.Entity<DatabaseInterface>().ToTable("DatabaseInterface");
         modelBuilder.Entity<KafkaInterface>().ToTable("KafkaInterface");
         modelBuilder.Entity<Product>().ToTable("Product");
-        
+
         modelBuilder.ApplyConfiguration(new DataInterfaceConfiguration());
-        
+
         modelBuilder.ApplyConfiguration(new DatabaseInterfaceConfiguration());
         modelBuilder.ApplyConfiguration(new KafkaInterfaceConfiguration());
         modelBuilder.ApplyConfiguration(new ApiInterfaceConfiguration());
-        
+
         modelBuilder.ApplyConfiguration(new ProductConfiguration());
-        
+
         base.OnModelCreating(modelBuilder);
     }
 }

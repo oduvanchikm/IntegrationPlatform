@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Publication Service - Integration Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+<div class="container mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">Publication Service</h1>
+
+    <!--    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">-->
+    <!--        <div class="bg-white p-6 rounded-lg shadow">-->
+    <!--            <h2 class="text-xl font-semibold mb-4">Service Status</h2>-->
+    <!--            <div id="serviceStatus" class="text-green-500">Checking...</div>-->
+    <!--            <button onclick="checkHealth()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">-->
+    <!--                Check Health-->
+    <!--            </button>-->
+    <!--        </div>-->
+
+    <!--        <div class="bg-white p-6 rounded-lg shadow">-->
+    <!--            <h2 class="text-xl font-semibold mb-4">Statistics</h2>-->
+    <!--            <div id="stats">-->
+    <!--                <div>Products: <span id="productCount">0</span></div>-->
+    <!--                <div>Interfaces: <span id="interfaceCount">0</span></div>-->
+    <!--                <div>API: <span id="apiCount">0</span></div>-->
+    <!--                <div>Database: <span id="dbCount">0</span></div>-->
+    <!--                <div>Kafka: <span id="kafkaCount">0</span></div>-->
+    <!--            </div>-->
+    <!--            <button onclick="loadStats()" class="mt-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">-->
+    <!--                Refresh Stats-->
+    <!--            </button>-->
+    <!--        </div>-->
+    <!--    </div>-->
+
+    <div class="bg-white p-6 rounded-lg shadow mb-8">
+        <h2 class="text-xl font-semibold mb-4">Publish New Interface</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <label for="productName"></label><input type="text" id="productName" placeholder="Product Name*"
+                                                    class="p-2 border rounded" required>
+            <label for="interfaceName"></label><input class="p-2 border rounded" id="interfaceName"
+                                                      placeholder="Interface Name*" required type="text">
+        </div>
+
+        <label for="description"></label><textarea id="description" placeholder="Description"
+                                                   class="w-full p-2 border rounded mb-4" rows="2"></textarea>
+
+        <label for="interfaceType"></label><select id="interfaceType" class="w-full p-2 border rounded mb-4"
+                                                   onchange="showInterfaceFields()">
+        <option value="">Select Interface Type*</option>
+        <option value="0">API</option>
+        <option value="1">Database</option>
+        <option value="2">Kafka</option>
+    </select>
+
+        <div id="apiFields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <label for="host"></label><input type="text" id="host" placeholder="Host" class="p-2 border rounded">
+            <label for="port"></label><input type="text" id="port" placeholder="Port" class="p-2 border rounded">
+            <label for="endpoint"></label><input type="text" id="endpoint" placeholder="Endpoint"
+                                                 class="p-2 border rounded">
+            <label for="username"></label><input type="text" id="username" placeholder="Username"
+                                                 class="p-2 border rounded">
+            <label for="password"></label><input type="password" id="password" placeholder="Password"
+                                                 class="p-2 border rounded">
+            <label for="token"></label><input type="text" id="token" placeholder="Token" class="p-2 border rounded">
+        </div>
+
+        <div id="dbFields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <label for="dbHost"></label><input type="text" id="dbHost" placeholder="Host" class="p-2 border rounded">
+            <label for="dbPort"></label><input type="text" id="dbPort" placeholder="Port" class="p-2 border rounded">
+            <label for="dbName"></label><input type="text" id="dbName" placeholder="Database Name"
+                                               class="p-2 border rounded">
+            <label for="dbSchema"></label><input type="text" id="dbSchema" placeholder="Schema"
+                                                 class="p-2 border rounded">
+            <label for="dbUsername"></label><input type="text" id="dbUsername" placeholder="Username"
+                                                   class="p-2 border rounded">
+            <label for="dbPassword"></label><input type="password" id="dbPassword" placeholder="Password"
+                                                   class="p-2 border rounded">
+        </div>
+
+        <div id="kafkaFields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <label for="bootstrapServers"></label><input type="text" id="bootstrapServers"
+                                                         placeholder="Bootstrap Servers" class="p-2 border rounded">
+            <label for="topicName"></label><input type="text" id="topicName" placeholder="Topic Name"
+                                                  class="p-2 border rounded">
+            <label for="kafkaUsername"></label><input type="text" id="kafkaUsername" placeholder="Username"
+                                                      class="p-2 border rounded">
+            <label for="kafkaPassword"></label><input type="password" id="kafkaPassword" placeholder="Password"
+                                                      class="p-2 border rounded">
+        </div>
+
+        <button onclick="publishInterface()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+            Publish Interface
+        </button>
+
+        <div id="publishResult" class="mt-4"></div>
+    </div>
+</div>
+
+<script>
+    function showInterfaceFields() {
+        const type = document.getElementById('interfaceType').value;
+        document.getElementById('apiFields').classList.add('hidden');
+        document.getElementById('dbFields').classList.add('hidden');
+        document.getElementById('kafkaFields').classList.add('hidden');
+
+        if (type === '0') document.getElementById('apiFields').classList.remove('hidden');
+        if (type === '1') document.getElementById('dbFields').classList.remove('hidden');
+        if (type === '2') document.getElementById('kafkaFields').classList.remove('hidden');
+    }
+
+    async function publishInterface() {
+        const request = {
+            Name: document.getElementById('interfaceName').value,
+            ProductName: document.getElementById('productName').value,
+            InterfaceType: parseInt(document.getElementById('interfaceType').value),
+            Description: document.getElementById('description').value,
+            Host: document.getElementById('host')?.value,
+            Port: document.getElementById('port')?.value,
+            Endpoint: document.getElementById('endpoint')?.value,
+            Username: document.getElementById('username')?.value,
+            Password: document.getElementById('password')?.value,
+            Token: document.getElementById('token')?.value,
+            DatabaseName: document.getElementById('dbName')?.value,
+            Scheme: document.getElementById('dbSchema')?.value,
+            BootstrapServers: document.getElementById('bootstrapServers')?.value,
+            TopicName: document.getElementById('topicName')?.value
+        };
+
+        try {
+            const response = await fetch('/api/publication/interfaces', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(request)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                document.getElementById('publishResult').innerHTML =
+                    `<div class="text-green-500">${result.message} (ID: ${result.interfaceId})</div>`;
+                loadStats(); // Обновляем статистику
+            } else {
+                document.getElementById('publishResult').innerHTML =
+                    `<div class="text-red-500">Error: ${result.error}</div>`;
+            }
+        } catch (error) {
+            document.getElementById('publishResult').innerHTML =
+                `<div class="text-red-500">Request failed: ${error.message}</div>`;
+        }
+    }
+
+    async function checkHealth() {
+        try {
+            const response = await fetch('/api/publication/health');
+            const data = await response.json();
+            document.getElementById('serviceStatus').textContent =
+                `${data.Status} - ${data.Service}`;
+        } catch (error) {
+            document.getElementById('serviceStatus').textContent = 'Service unavailable';
+        }
+    }
+
+    async function loadStats() {
+        try {
+            const response = await fetch('/api/publication/stats');
+            const result = await response.json();
+
+            if (result.success) {
+                document.getElementById('productCount').textContent = result.stats.totalProducts;
+                document.getElementById('interfaceCount').textContent = result.stats.totalInterfaces;
+                document.getElementById('apiCount').textContent = result.stats.apiInterfaces;
+                document.getElementById('dbCount').textContent = result.stats.databaseInterfaces;
+                document.getElementById('kafkaCount').textContent = result.stats.kafkaInterfaces;
+            }
+        } catch (error) {
+            console.error('Failed to load stats:', error);
+        }
+    }
+
+    checkHealth();
+    loadStats();
+    setInterval(loadStats, 30000);
+</script>
+</body>
+</html>

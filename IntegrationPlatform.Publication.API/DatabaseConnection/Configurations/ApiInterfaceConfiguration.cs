@@ -10,8 +10,6 @@ public class ApiInterfaceConfiguration : IEntityTypeConfiguration<ApiInterface>
     {
         builder.ToTable("ApiInterface", "publication");
 
-        // builder.HasKey(e => e.Id);
-
         builder.Property(e => e.Host)
             .IsRequired()
             .HasMaxLength(500);

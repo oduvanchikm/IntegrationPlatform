@@ -10,8 +10,6 @@ public class KafkaInterfaceConfiguration : IEntityTypeConfiguration<KafkaInterfa
     {
         builder.ToTable("KafkaInterface", "publication");
 
-        // builder.HasKey(c => c.Id);
-
         builder.Property(k => k.Username)
             .IsRequired()
             .HasMaxLength(100);

@@ -1,5 +1,6 @@
 using IntegrationPlatform.Common.Enums;
 using IntegrationPlatform.Common.Models;
+using IntegrationPlatform.Publication.API.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -33,5 +34,10 @@ public class DataInterfaceConfiguration : IEntityTypeConfiguration<DataInterface
             .WithMany(p => p.Interfaces)
             .HasForeignKey(di => di.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
+        
+        // builder.HasDiscriminator<InterfaceType>(nameof(DataInterface.InterfaceType))
+        //     .HasValue<ApiInterface>(InterfaceType.Api)
+        //     .HasValue<DatabaseInterface>(InterfaceType.Db)
+        //     .HasValue<KafkaInterface>(InterfaceType.Kafka);
     }
 }

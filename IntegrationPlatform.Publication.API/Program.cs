@@ -9,8 +9,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add DbContext
-builder.Services.AddDbContext<PublicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("PublicationDbContext")));
+builder.Services.AddDbContextFactory<PublicationDbContext>(options =>
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("PublicationDbContext"),
+        x => x.MigrationsHistoryTable("__EFMigrationsHistory", "publication")
+    ));
 
 var app = builder.Build();
 

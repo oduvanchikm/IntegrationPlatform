@@ -10,7 +10,7 @@ public class DatabaseInterfaceConfiguration : IEntityTypeConfiguration<DatabaseI
     {
         builder.ToTable("DatabaseInterface", "publication");
 
-        builder.HasKey(e => e.Id);
+        // builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Username)
             .IsRequired()

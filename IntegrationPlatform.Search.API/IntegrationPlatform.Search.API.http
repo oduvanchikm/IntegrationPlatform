@@ -1,4 +1,4 @@
-@IntegrationPlatform.Search.API_HostAddress = http://localhost:5209
+@IntegrationPlatform.Search.API_HostAddress = http://localhost:5067
 
 GET {{IntegrationPlatform.Search.API_HostAddress}}/weatherforecast/
 Accept: application/json

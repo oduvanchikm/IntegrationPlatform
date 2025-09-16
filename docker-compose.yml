@@ -15,8 +15,8 @@
 
   publication-api:
     build:
-      context: ./IntegrationPlatform.Publication.API
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: IntegrationPlatform.Publication.API/Dockerfile
     container_name: publication-api
     environment:
       - ConnectionStrings__PublicationDbContext=Host=postgres;Port=5432;Database=integration_platform;Username=admin;Password=password;Search Path=publication

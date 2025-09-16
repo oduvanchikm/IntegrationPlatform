@@ -1,4 +1,4 @@
-@IntegrationPlatform.Subscription.API_HostAddress = http://localhost:5011
+@IntegrationPlatform.Subscription.API_HostAddress = http://localhost:5091
 
 GET {{IntegrationPlatform.Subscription.API_HostAddress}}/weatherforecast/
 Accept: application/json

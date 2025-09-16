@@ -5,6 +5,7 @@ using IntegrationPlatform.Publication.API.DTO;
 using IntegrationPlatform.Publication.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace IntegrationPlatform.Publication.API.Controllers;
 
@@ -13,37 +14,44 @@ namespace IntegrationPlatform.Publication.API.Controllers;
 public class PublicationController(ILogger<PublicationController> logger, PublicationDbContext publicationDbContext)
     : ControllerBase
 {
-    private readonly ILogger<PublicationController> _logger = logger;
-    private readonly PublicationDbContext _publicationDbContext = publicationDbContext;
-
     [HttpPost("interfaces")]
     public async Task<IActionResult> PublishInterface([FromBody] InterfacePublishRequest request)
     {
         try
         {
+            logger.LogInformation("Received interface publication request: {@Request}", request);
+
             if (string.IsNullOrEmpty(request.ProductName))
             {
+                logger.LogWarning("ProductName is required");
                 return BadRequest(new { Success = false, Error = "ProductName is required" });
             }
 
             if (string.IsNullOrEmpty(request.Name))
             {
+                logger.LogWarning("Interface Name is required");
                 return BadRequest(new { Success = false, Error = "Interface Name is required" });
             }
 
-            var product = await _publicationDbContext.Products
+            logger.LogDebug("Looking for product: {ProductName}", request.ProductName);
+            var product = await publicationDbContext.Products
                 .FirstOrDefaultAsync(p => p.NameProduct == request.ProductName);
 
             if (product == null)
             {
+                logger.LogInformation("Creating new product: {ProductName}", request.ProductName);
+
                 product = new Product
                 {
                     NameProduct = request.ProductName,
                     ProductType = request.ProductType
                 };
-                _publicationDbContext.Products.Add(product);
-                await _publicationDbContext.SaveChangesAsync();
+                publicationDbContext.Products.Add(product);
+                await publicationDbContext.SaveChangesAsync();
+                logger.LogDebug("Created product with ID: {ProductId}", product.Id);
             }
+
+            logger.LogDebug("Creating interface of type: {InterfaceType}", request.InterfaceType);
 
             DataInterface newInterface = request.InterfaceType switch
             {
@@ -90,8 +98,10 @@ public class PublicationController(ILogger<PublicationController> logger, Public
                 _ => throw new ArgumentException("Unsupported interface type")
             };
 
-            _publicationDbContext.DataInterfaces.Add(newInterface);
-            await _publicationDbContext.SaveChangesAsync();
+            publicationDbContext.DataInterfaces.Add(newInterface);
+            await publicationDbContext.SaveChangesAsync();
+            logger.LogInformation("Interface published successfully. ID: {InterfaceId}, Type: {InterfaceType}",
+                newInterface.Id, newInterface.InterfaceType);
 
             return Ok(new
             {
@@ -104,6 +114,7 @@ public class PublicationController(ILogger<PublicationController> logger, Public
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Error publishing interface: {ErrorMessage}", ex.Message);
             return StatusCode(500, new { Success = false, Error = ex.Message });
         }
     }

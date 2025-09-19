@@ -24,26 +24,42 @@
       - postgres
     ports:
       - "5001:80"
-
-#  discovery-api:
-#    build:
-#      context: ./IntegrationPlatform.Search.API
-#      dockerfile: Dockerfile
-#    container_name: discovery-api
-#    ports:
-#      - "5002:80"
+  
+  search-api:
+    build:
+      context: .
+      dockerfile: IntegrationPlatform.Search.API/Dockerfile
+    container_name: search-api
+    environment:
+      - ConnectionStrings__DiscoveryDbContext=Host=postgres;Port=5432;Database=integration_platform;Username=admin;Password=password;Search Path=publication
+    depends_on:
+      - postgres
+    ports:
+      - "5002:80"
 
 #  subscription-api:
 #    build:
-#      context: ./IntegrationPlatform.Subscription.API
-#      dockerfile: Dockerfile
+#      context: .
+#      dockerfile: IntegrationPlatform.Subscription.API/Dockerfile
 #    container_name: subscription-api
 #    environment:
 #      - ConnectionStrings__SubscriptionDbContext=Host=postgres;Port=5432;Database=integration_platform;Username=admin;Password=password;Search Path=subscription
 #    depends_on:
 #      - postgres
 #    ports:
-#      - "5003:80"
+#      - "5002:80"
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: integration-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - publication-api
+      - search-api
+#      - subscription-api
 
 volumes:
   postgres_data:

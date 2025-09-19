@@ -11,7 +11,9 @@ namespace IntegrationPlatform.Publication.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class PublicationController(ILogger<PublicationController> logger, PublicationDbContext publicationDbContext)
+public class PublicationController(
+    ILogger<PublicationController> logger,
+    IDbContextFactory<PublicationDbContext> publicationDbContext)
     : ControllerBase
 {
     [HttpPost("interfaces")]
@@ -19,6 +21,8 @@ public class PublicationController(ILogger<PublicationController> logger, Public
     {
         try
         {
+            await using var context = await publicationDbContext.CreateDbContextAsync();
+            
             logger.LogInformation("Received interface publication request: {@Request}", request);
 
             if (string.IsNullOrEmpty(request.ProductName))
@@ -34,7 +38,7 @@ public class PublicationController(ILogger<PublicationController> logger, Public
             }
 
             logger.LogDebug("Looking for product: {ProductName}", request.ProductName);
-            var product = await publicationDbContext.Products
+            var product = await context.Products
                 .FirstOrDefaultAsync(p => p.NameProduct == request.ProductName);
 
             if (product == null)
@@ -46,8 +50,8 @@ public class PublicationController(ILogger<PublicationController> logger, Public
                     NameProduct = request.ProductName,
                     ProductType = request.ProductType
                 };
-                publicationDbContext.Products.Add(product);
-                await publicationDbContext.SaveChangesAsync();
+                context.Products.Add(product);
+                await context.SaveChangesAsync();
                 logger.LogDebug("Created product with ID: {ProductId}", product.Id);
             }
 
@@ -98,8 +102,8 @@ public class PublicationController(ILogger<PublicationController> logger, Public
                 _ => throw new ArgumentException("Unsupported interface type")
             };
 
-            publicationDbContext.DataInterfaces.Add(newInterface);
-            await publicationDbContext.SaveChangesAsync();
+            context.DataInterfaces.Add(newInterface);
+            await context.SaveChangesAsync();
             logger.LogInformation("Interface published successfully. ID: {InterfaceId}, Type: {InterfaceType}",
                 newInterface.Id, newInterface.InterfaceType);
 

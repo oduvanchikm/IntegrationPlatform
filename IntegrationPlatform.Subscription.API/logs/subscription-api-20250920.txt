@@ -1,0 +1,471 @@
+2025-09-20 23:38:51.964 +04:00 [DBG] An 'IServiceProvider' was created for internal use by Entity Framework.
+2025-09-20 23:38:52.278 +04:00 [DBG] Entity Framework Core 8.0.0 initialized 'SubscriptionDbContext' using provider 'Npgsql.EntityFrameworkCore.PostgreSQL:8.0.0+2539d1f4bd0d429cbae20336d531d14938a54297' with options: MigrationsHistoryTable=subscription.__EFMigrationsHistory 
+2025-09-20 23:38:52.447 +04:00 [DBG] 'SubscriptionDbContext' disposed.
+2025-09-20 23:39:06.779 +04:00 [DBG] An 'IServiceProvider' was created for internal use by Entity Framework.
+2025-09-20 23:39:07.082 +04:00 [DBG] Entity Framework Core 8.0.0 initialized 'SubscriptionDbContext' using provider 'Npgsql.EntityFrameworkCore.PostgreSQL:8.0.0+2539d1f4bd0d429cbae20336d531d14938a54297' with options: MigrationsHistoryTable=subscription.__EFMigrationsHistory 
+2025-09-20 23:39:07.298 +04:00 [DBG] 'SubscriptionDbContext' disposed.
+2025-09-20 23:39:12.217 +04:00 [DBG] An 'IServiceProvider' was created for internal use by Entity Framework.
+2025-09-20 23:39:12.520 +04:00 [DBG] Entity Framework Core 8.0.0 initialized 'SubscriptionDbContext' using provider 'Npgsql.EntityFrameworkCore.PostgreSQL:8.0.0+2539d1f4bd0d429cbae20336d531d14938a54297' with options: MigrationsHistoryTable=subscription.__EFMigrationsHistory 
+2025-09-20 23:39:12.528 +04:00 [DBG] Creating DbConnection.
+2025-09-20 23:39:12.541 +04:00 [DBG] Created DbConnection. (12ms).
+2025-09-20 23:39:12.545 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://postgres:5432'.
+2025-09-20 23:39:16.681 +04:00 [DBG] An error occurred using the connection to database 'integration_platform' on server 'tcp://postgres:5432'.
+2025-09-20 23:39:16.686 +04:00 [DBG] 'SubscriptionDbContext' disposed.
+2025-09-20 23:39:16.687 +04:00 [DBG] Disposing connection to database 'integration_platform' on server 'tcp://postgres:5432'.
+2025-09-20 23:39:16.690 +04:00 [DBG] Disposed connection to database 'integration_platform' on server 'tcp://postgres:5432' (0ms).
+2025-09-20 23:40:52.930 +04:00 [DBG] An 'IServiceProvider' was created for internal use by Entity Framework.
+2025-09-20 23:40:53.244 +04:00 [DBG] Entity Framework Core 8.0.0 initialized 'SubscriptionDbContext' using provider 'Npgsql.EntityFrameworkCore.PostgreSQL:8.0.0+2539d1f4bd0d429cbae20336d531d14938a54297' with options: MigrationsHistoryTable=subscription.__EFMigrationsHistory 
+2025-09-20 23:40:53.254 +04:00 [DBG] Creating DbConnection.
+2025-09-20 23:40:53.267 +04:00 [DBG] Created DbConnection. (12ms).
+2025-09-20 23:40:53.271 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.317 +04:00 [DBG] Opened connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.317 +04:00 [DBG] Closing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.321 +04:00 [DBG] Closed connection to database 'integration_platform' on server 'tcp://localhost:5480' (2ms).
+2025-09-20 23:40:53.324 +04:00 [DBG] Creating DbCommand for 'ExecuteScalar'.
+2025-09-20 23:40:53.326 +04:00 [DBG] Created DbCommand for 'ExecuteScalar' (2ms).
+2025-09-20 23:40:53.326 +04:00 [DBG] Initialized DbCommand for 'ExecuteScalar' (3ms).
+2025-09-20 23:40:53.327 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.337 +04:00 [DBG] Opened connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.340 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='subscription' AND
+          c.relname='__EFMigrationsHistory'
+)
+2025-09-20 23:40:53.369 +04:00 [INF] Executed DbCommand (28ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='subscription' AND
+          c.relname='__EFMigrationsHistory'
+)
+2025-09-20 23:40:53.369 +04:00 [DBG] Closing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.370 +04:00 [DBG] Closed connection to database 'integration_platform' on server 'tcp://localhost:5480' (0ms).
+2025-09-20 23:40:53.370 +04:00 [DBG] Migrating using database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.371 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.375 +04:00 [DBG] Opened connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.375 +04:00 [DBG] Closing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.375 +04:00 [DBG] Closed connection to database 'integration_platform' on server 'tcp://localhost:5480' (0ms).
+2025-09-20 23:40:53.376 +04:00 [DBG] Creating DbCommand for 'ExecuteScalar'.
+2025-09-20 23:40:53.376 +04:00 [DBG] Created DbCommand for 'ExecuteScalar' (0ms).
+2025-09-20 23:40:53.376 +04:00 [DBG] Initialized DbCommand for 'ExecuteScalar' (0ms).
+2025-09-20 23:40:53.376 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.376 +04:00 [DBG] Opened connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.376 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='subscription' AND
+          c.relname='__EFMigrationsHistory'
+)
+2025-09-20 23:40:53.377 +04:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='subscription' AND
+          c.relname='__EFMigrationsHistory'
+)
+2025-09-20 23:40:53.377 +04:00 [DBG] Closing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.377 +04:00 [DBG] Closed connection to database 'integration_platform' on server 'tcp://localhost:5480' (0ms).
+2025-09-20 23:40:53.377 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.381 +04:00 [DBG] Opened connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.381 +04:00 [DBG] Closing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.381 +04:00 [DBG] Closed connection to database 'integration_platform' on server 'tcp://localhost:5480' (0ms).
+2025-09-20 23:40:53.410 +04:00 [DBG] Creating DbCommand for 'ExecuteNonQuery'.
+2025-09-20 23:40:53.410 +04:00 [DBG] Created DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:40:53.410 +04:00 [DBG] Initialized DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:40:53.410 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.410 +04:00 [DBG] Opened connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.410 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = 'subscription') THEN
+        CREATE SCHEMA subscription;
+    END IF;
+END $EF$;
+CREATE TABLE subscription."__EFMigrationsHistory" (
+    "MigrationId" character varying(150) NOT NULL,
+    "ProductVersion" character varying(32) NOT NULL,
+    CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
+);
+2025-09-20 23:40:53.426 +04:00 [INF] Executed DbCommand (16ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = 'subscription') THEN
+        CREATE SCHEMA subscription;
+    END IF;
+END $EF$;
+CREATE TABLE subscription."__EFMigrationsHistory" (
+    "MigrationId" character varying(150) NOT NULL,
+    "ProductVersion" character varying(32) NOT NULL,
+    CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
+);
+2025-09-20 23:40:53.426 +04:00 [DBG] Closing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.426 +04:00 [DBG] Closed connection to database 'integration_platform' on server 'tcp://localhost:5480' (0ms).
+2025-09-20 23:40:53.426 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.430 +04:00 [DBG] Opened connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.430 +04:00 [DBG] Closing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.430 +04:00 [DBG] Closed connection to database 'integration_platform' on server 'tcp://localhost:5480' (0ms).
+2025-09-20 23:40:53.430 +04:00 [DBG] Creating DbCommand for 'ExecuteScalar'.
+2025-09-20 23:40:53.430 +04:00 [DBG] Created DbCommand for 'ExecuteScalar' (0ms).
+2025-09-20 23:40:53.430 +04:00 [DBG] Initialized DbCommand for 'ExecuteScalar' (0ms).
+2025-09-20 23:40:53.430 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.430 +04:00 [DBG] Opened connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.430 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='subscription' AND
+          c.relname='__EFMigrationsHistory'
+)
+2025-09-20 23:40:53.431 +04:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='subscription' AND
+          c.relname='__EFMigrationsHistory'
+)
+2025-09-20 23:40:53.431 +04:00 [DBG] Closing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.431 +04:00 [DBG] Closed connection to database 'integration_platform' on server 'tcp://localhost:5480' (0ms).
+2025-09-20 23:40:53.432 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.432 +04:00 [DBG] Opened connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.432 +04:00 [DBG] Creating DbCommand for 'ExecuteReader'.
+2025-09-20 23:40:53.432 +04:00 [DBG] Created DbCommand for 'ExecuteReader' (0ms).
+2025-09-20 23:40:53.432 +04:00 [DBG] Initialized DbCommand for 'ExecuteReader' (0ms).
+2025-09-20 23:40:53.432 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM subscription."__EFMigrationsHistory"
+ORDER BY "MigrationId";
+2025-09-20 23:40:53.433 +04:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM subscription."__EFMigrationsHistory"
+ORDER BY "MigrationId";
+2025-09-20 23:40:53.434 +04:00 [DBG] Closing data reader to 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.434 +04:00 [DBG] A data reader for 'integration_platform' on server 'tcp://localhost:5480' is being disposed after spending 0ms reading results.
+2025-09-20 23:40:53.434 +04:00 [DBG] Closing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.434 +04:00 [DBG] Closed connection to database 'integration_platform' on server 'tcp://localhost:5480' (0ms).
+2025-09-20 23:40:53.437 +04:00 [DBG] No migrations were found in assembly 'IntegrationPlatform.Subscription.API'.
+2025-09-20 23:40:53.438 +04:00 [INF] No migrations were applied. The database is already up to date.
+2025-09-20 23:40:53.438 +04:00 [DBG] No migrations were found in assembly 'IntegrationPlatform.Subscription.API'.
+2025-09-20 23:40:53.439 +04:00 [DBG] 'SubscriptionDbContext' disposed.
+2025-09-20 23:40:53.439 +04:00 [DBG] Disposing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:40:53.440 +04:00 [DBG] Disposed connection to database 'integration_platform' on server 'tcp://localhost:5480' (0ms).
+2025-09-20 23:41:25.326 +04:00 [DBG] An 'IServiceProvider' was created for internal use by Entity Framework.
+2025-09-20 23:41:25.632 +04:00 [DBG] Entity Framework Core 8.0.0 initialized 'SubscriptionDbContext' using provider 'Npgsql.EntityFrameworkCore.PostgreSQL:8.0.0+2539d1f4bd0d429cbae20336d531d14938a54297' with options: MigrationsHistoryTable=subscription.__EFMigrationsHistory 
+2025-09-20 23:41:25.849 +04:00 [DBG] 'SubscriptionDbContext' disposed.
+2025-09-20 23:41:30.219 +04:00 [DBG] An 'IServiceProvider' was created for internal use by Entity Framework.
+2025-09-20 23:41:30.510 +04:00 [DBG] Entity Framework Core 8.0.0 initialized 'SubscriptionDbContext' using provider 'Npgsql.EntityFrameworkCore.PostgreSQL:8.0.0+2539d1f4bd0d429cbae20336d531d14938a54297' with options: MigrationsHistoryTable=subscription.__EFMigrationsHistory 
+2025-09-20 23:41:30.518 +04:00 [DBG] Creating DbConnection.
+2025-09-20 23:41:30.531 +04:00 [DBG] Created DbConnection. (12ms).
+2025-09-20 23:41:30.535 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.582 +04:00 [DBG] Opened connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.582 +04:00 [DBG] Closing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.586 +04:00 [DBG] Closed connection to database 'integration_platform' on server 'tcp://localhost:5480' (2ms).
+2025-09-20 23:41:30.588 +04:00 [DBG] Creating DbCommand for 'ExecuteScalar'.
+2025-09-20 23:41:30.590 +04:00 [DBG] Created DbCommand for 'ExecuteScalar' (2ms).
+2025-09-20 23:41:30.591 +04:00 [DBG] Initialized DbCommand for 'ExecuteScalar' (3ms).
+2025-09-20 23:41:30.591 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.601 +04:00 [DBG] Opened connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.603 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='subscription' AND
+          c.relname='__EFMigrationsHistory'
+)
+2025-09-20 23:41:30.629 +04:00 [INF] Executed DbCommand (26ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='subscription' AND
+          c.relname='__EFMigrationsHistory'
+)
+2025-09-20 23:41:30.630 +04:00 [DBG] Closing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.630 +04:00 [DBG] Closed connection to database 'integration_platform' on server 'tcp://localhost:5480' (0ms).
+2025-09-20 23:41:30.634 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.635 +04:00 [DBG] Opened connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.635 +04:00 [DBG] Creating DbCommand for 'ExecuteReader'.
+2025-09-20 23:41:30.635 +04:00 [DBG] Created DbCommand for 'ExecuteReader' (0ms).
+2025-09-20 23:41:30.635 +04:00 [DBG] Initialized DbCommand for 'ExecuteReader' (0ms).
+2025-09-20 23:41:30.637 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM subscription."__EFMigrationsHistory"
+ORDER BY "MigrationId";
+2025-09-20 23:41:30.639 +04:00 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM subscription."__EFMigrationsHistory"
+ORDER BY "MigrationId";
+2025-09-20 23:41:30.639 +04:00 [DBG] Closing data reader to 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.640 +04:00 [DBG] A data reader for 'integration_platform' on server 'tcp://localhost:5480' is being disposed after spending 0ms reading results.
+2025-09-20 23:41:30.640 +04:00 [DBG] Closing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.640 +04:00 [DBG] Closed connection to database 'integration_platform' on server 'tcp://localhost:5480' (0ms).
+2025-09-20 23:41:30.640 +04:00 [DBG] Migrating using database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.641 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.648 +04:00 [DBG] Opened connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.648 +04:00 [DBG] Closing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.648 +04:00 [DBG] Closed connection to database 'integration_platform' on server 'tcp://localhost:5480' (0ms).
+2025-09-20 23:41:30.648 +04:00 [DBG] Creating DbCommand for 'ExecuteScalar'.
+2025-09-20 23:41:30.648 +04:00 [DBG] Created DbCommand for 'ExecuteScalar' (0ms).
+2025-09-20 23:41:30.648 +04:00 [DBG] Initialized DbCommand for 'ExecuteScalar' (0ms).
+2025-09-20 23:41:30.648 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.648 +04:00 [DBG] Opened connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.648 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='subscription' AND
+          c.relname='__EFMigrationsHistory'
+)
+2025-09-20 23:41:30.649 +04:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='subscription' AND
+          c.relname='__EFMigrationsHistory'
+)
+2025-09-20 23:41:30.649 +04:00 [DBG] Closing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.649 +04:00 [DBG] Closed connection to database 'integration_platform' on server 'tcp://localhost:5480' (0ms).
+2025-09-20 23:41:30.649 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.653 +04:00 [DBG] Opened connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.653 +04:00 [DBG] Closing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.653 +04:00 [DBG] Closed connection to database 'integration_platform' on server 'tcp://localhost:5480' (0ms).
+2025-09-20 23:41:30.653 +04:00 [DBG] Creating DbCommand for 'ExecuteScalar'.
+2025-09-20 23:41:30.653 +04:00 [DBG] Created DbCommand for 'ExecuteScalar' (0ms).
+2025-09-20 23:41:30.653 +04:00 [DBG] Initialized DbCommand for 'ExecuteScalar' (0ms).
+2025-09-20 23:41:30.653 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.654 +04:00 [DBG] Opened connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.654 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='subscription' AND
+          c.relname='__EFMigrationsHistory'
+)
+2025-09-20 23:41:30.654 +04:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='subscription' AND
+          c.relname='__EFMigrationsHistory'
+)
+2025-09-20 23:41:30.654 +04:00 [DBG] Closing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.654 +04:00 [DBG] Closed connection to database 'integration_platform' on server 'tcp://localhost:5480' (0ms).
+2025-09-20 23:41:30.654 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.654 +04:00 [DBG] Opened connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.654 +04:00 [DBG] Creating DbCommand for 'ExecuteReader'.
+2025-09-20 23:41:30.654 +04:00 [DBG] Created DbCommand for 'ExecuteReader' (0ms).
+2025-09-20 23:41:30.654 +04:00 [DBG] Initialized DbCommand for 'ExecuteReader' (0ms).
+2025-09-20 23:41:30.654 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM subscription."__EFMigrationsHistory"
+ORDER BY "MigrationId";
+2025-09-20 23:41:30.655 +04:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM subscription."__EFMigrationsHistory"
+ORDER BY "MigrationId";
+2025-09-20 23:41:30.655 +04:00 [DBG] Closing data reader to 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.655 +04:00 [DBG] A data reader for 'integration_platform' on server 'tcp://localhost:5480' is being disposed after spending 0ms reading results.
+2025-09-20 23:41:30.655 +04:00 [DBG] Closing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.655 +04:00 [DBG] Closed connection to database 'integration_platform' on server 'tcp://localhost:5480' (0ms).
+2025-09-20 23:41:30.659 +04:00 [INF] Applying migration '20250920194125_InitialCreate'.
+2025-09-20 23:41:30.678 +04:00 [DBG] Opening connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.678 +04:00 [DBG] Opened connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.679 +04:00 [DBG] Beginning transaction with isolation level 'Unspecified'.
+2025-09-20 23:41:30.680 +04:00 [DBG] Began transaction with isolation level 'ReadCommitted'.
+2025-09-20 23:41:30.680 +04:00 [DBG] Creating DbCommand for 'ExecuteNonQuery'.
+2025-09-20 23:41:30.680 +04:00 [DBG] Created DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.681 +04:00 [DBG] Initialized DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.681 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = 'subscription') THEN
+        CREATE SCHEMA subscription;
+    END IF;
+END $EF$;
+2025-09-20 23:41:30.684 +04:00 [INF] Executed DbCommand (4ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = 'subscription') THEN
+        CREATE SCHEMA subscription;
+    END IF;
+END $EF$;
+2025-09-20 23:41:30.684 +04:00 [DBG] Creating DbCommand for 'ExecuteNonQuery'.
+2025-09-20 23:41:30.684 +04:00 [DBG] Created DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.685 +04:00 [DBG] Initialized DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.685 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE subscription."Products" (
+    "Id" integer GENERATED BY DEFAULT AS IDENTITY,
+    "NameProduct" character varying(500) NOT NULL,
+    "ProductType" text NOT NULL,
+    CONSTRAINT "PK_Products" PRIMARY KEY ("Id")
+);
+2025-09-20 23:41:30.691 +04:00 [INF] Executed DbCommand (6ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE subscription."Products" (
+    "Id" integer GENERATED BY DEFAULT AS IDENTITY,
+    "NameProduct" character varying(500) NOT NULL,
+    "ProductType" text NOT NULL,
+    CONSTRAINT "PK_Products" PRIMARY KEY ("Id")
+);
+2025-09-20 23:41:30.691 +04:00 [DBG] Creating DbCommand for 'ExecuteNonQuery'.
+2025-09-20 23:41:30.691 +04:00 [DBG] Created DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.691 +04:00 [DBG] Initialized DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.691 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE subscription."DataInterfaces" (
+    "Id" integer GENERATED BY DEFAULT AS IDENTITY,
+    "Name" character varying(500) NOT NULL,
+    "Description" character varying(2000) NOT NULL,
+    "InterfaceType" text NOT NULL,
+    "Status" text NOT NULL DEFAULT 'Draft',
+    "ProductId" integer NOT NULL,
+    CONSTRAINT "PK_DataInterfaces" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_DataInterfaces_Products_ProductId" FOREIGN KEY ("ProductId") REFERENCES subscription."Products" ("Id") ON DELETE CASCADE
+);
+2025-09-20 23:41:30.695 +04:00 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE subscription."DataInterfaces" (
+    "Id" integer GENERATED BY DEFAULT AS IDENTITY,
+    "Name" character varying(500) NOT NULL,
+    "Description" character varying(2000) NOT NULL,
+    "InterfaceType" text NOT NULL,
+    "Status" text NOT NULL DEFAULT 'Draft',
+    "ProductId" integer NOT NULL,
+    CONSTRAINT "PK_DataInterfaces" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_DataInterfaces_Products_ProductId" FOREIGN KEY ("ProductId") REFERENCES subscription."Products" ("Id") ON DELETE CASCADE
+);
+2025-09-20 23:41:30.695 +04:00 [DBG] Creating DbCommand for 'ExecuteNonQuery'.
+2025-09-20 23:41:30.695 +04:00 [DBG] Created DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.695 +04:00 [DBG] Initialized DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.695 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE subscription."ApiInterface" (
+    "Id" integer NOT NULL,
+    "Host" character varying(500) NOT NULL,
+    "Port" character varying(10) NOT NULL,
+    "Endpoint" character varying(100) NOT NULL,
+    "Username" character varying(100) NOT NULL,
+    "Password" character varying(100) NOT NULL,
+    "Token" character varying(1000) NOT NULL,
+    CONSTRAINT "PK_ApiInterface" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_ApiInterface_DataInterfaces_Id" FOREIGN KEY ("Id") REFERENCES subscription."DataInterfaces" ("Id") ON DELETE CASCADE
+);
+2025-09-20 23:41:30.697 +04:00 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE subscription."ApiInterface" (
+    "Id" integer NOT NULL,
+    "Host" character varying(500) NOT NULL,
+    "Port" character varying(10) NOT NULL,
+    "Endpoint" character varying(100) NOT NULL,
+    "Username" character varying(100) NOT NULL,
+    "Password" character varying(100) NOT NULL,
+    "Token" character varying(1000) NOT NULL,
+    CONSTRAINT "PK_ApiInterface" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_ApiInterface_DataInterfaces_Id" FOREIGN KEY ("Id") REFERENCES subscription."DataInterfaces" ("Id") ON DELETE CASCADE
+);
+2025-09-20 23:41:30.697 +04:00 [DBG] Creating DbCommand for 'ExecuteNonQuery'.
+2025-09-20 23:41:30.697 +04:00 [DBG] Created DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.697 +04:00 [DBG] Initialized DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.697 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE subscription."DatabaseInterface" (
+    "Id" integer NOT NULL,
+    "Host" character varying(500) NOT NULL,
+    "Port" character varying(10) NOT NULL,
+    "Username" character varying(500) NOT NULL,
+    "Password" character varying(100) NOT NULL,
+    "DatabaseName" character varying(100) NOT NULL,
+    "Scheme" character varying(100) NOT NULL,
+    CONSTRAINT "PK_DatabaseInterface" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_DatabaseInterface_DataInterfaces_Id" FOREIGN KEY ("Id") REFERENCES subscription."DataInterfaces" ("Id") ON DELETE CASCADE
+);
+2025-09-20 23:41:30.699 +04:00 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE subscription."DatabaseInterface" (
+    "Id" integer NOT NULL,
+    "Host" character varying(500) NOT NULL,
+    "Port" character varying(10) NOT NULL,
+    "Username" character varying(500) NOT NULL,
+    "Password" character varying(100) NOT NULL,
+    "DatabaseName" character varying(100) NOT NULL,
+    "Scheme" character varying(100) NOT NULL,
+    CONSTRAINT "PK_DatabaseInterface" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_DatabaseInterface_DataInterfaces_Id" FOREIGN KEY ("Id") REFERENCES subscription."DataInterfaces" ("Id") ON DELETE CASCADE
+);
+2025-09-20 23:41:30.699 +04:00 [DBG] Creating DbCommand for 'ExecuteNonQuery'.
+2025-09-20 23:41:30.699 +04:00 [DBG] Created DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.699 +04:00 [DBG] Initialized DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.699 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE subscription."KafkaInterface" (
+    "Id" integer NOT NULL,
+    "BootstrapServers" character varying(500) NOT NULL,
+    "Username" character varying(100) NOT NULL,
+    "Password" character varying(100) NOT NULL,
+    "TopicName" character varying(100) NOT NULL,
+    CONSTRAINT "PK_KafkaInterface" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_KafkaInterface_DataInterfaces_Id" FOREIGN KEY ("Id") REFERENCES subscription."DataInterfaces" ("Id") ON DELETE CASCADE
+);
+2025-09-20 23:41:30.701 +04:00 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE subscription."KafkaInterface" (
+    "Id" integer NOT NULL,
+    "BootstrapServers" character varying(500) NOT NULL,
+    "Username" character varying(100) NOT NULL,
+    "Password" character varying(100) NOT NULL,
+    "TopicName" character varying(100) NOT NULL,
+    CONSTRAINT "PK_KafkaInterface" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_KafkaInterface_DataInterfaces_Id" FOREIGN KEY ("Id") REFERENCES subscription."DataInterfaces" ("Id") ON DELETE CASCADE
+);
+2025-09-20 23:41:30.701 +04:00 [DBG] Creating DbCommand for 'ExecuteNonQuery'.
+2025-09-20 23:41:30.701 +04:00 [DBG] Created DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.701 +04:00 [DBG] Initialized DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.701 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE subscription."OrchestrationConfig" (
+    "Id" integer GENERATED BY DEFAULT AS IDENTITY,
+    "DataInterfaceId" integer NOT NULL,
+    "ScheduleCron" character varying(50) NOT NULL DEFAULT '*/5 * * * *',
+    "MaxRetryAttempts" integer NOT NULL DEFAULT 3,
+    "RetryDelaySeconds" integer NOT NULL DEFAULT 60,
+    "ExecutionTimeoutSeconds" integer NOT NULL DEFAULT 300,
+    "CreatedAt" timestamp with time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+    "UpdatedAt" timestamp with time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+    CONSTRAINT "PK_OrchestrationConfig" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_OrchestrationConfig_DataInterfaces_DataInterfaceId" FOREIGN KEY ("DataInterfaceId") REFERENCES subscription."DataInterfaces" ("Id") ON DELETE CASCADE
+);
+2025-09-20 23:41:30.704 +04:00 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE subscription."OrchestrationConfig" (
+    "Id" integer GENERATED BY DEFAULT AS IDENTITY,
+    "DataInterfaceId" integer NOT NULL,
+    "ScheduleCron" character varying(50) NOT NULL DEFAULT '*/5 * * * *',
+    "MaxRetryAttempts" integer NOT NULL DEFAULT 3,
+    "RetryDelaySeconds" integer NOT NULL DEFAULT 60,
+    "ExecutionTimeoutSeconds" integer NOT NULL DEFAULT 300,
+    "CreatedAt" timestamp with time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+    "UpdatedAt" timestamp with time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+    CONSTRAINT "PK_OrchestrationConfig" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_OrchestrationConfig_DataInterfaces_DataInterfaceId" FOREIGN KEY ("DataInterfaceId") REFERENCES subscription."DataInterfaces" ("Id") ON DELETE CASCADE
+);
+2025-09-20 23:41:30.704 +04:00 [DBG] Creating DbCommand for 'ExecuteNonQuery'.
+2025-09-20 23:41:30.704 +04:00 [DBG] Created DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.704 +04:00 [DBG] Initialized DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.704 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_DataInterfaces_ProductId" ON subscription."DataInterfaces" ("ProductId");
+2025-09-20 23:41:30.705 +04:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX "IX_DataInterfaces_ProductId" ON subscription."DataInterfaces" ("ProductId");
+2025-09-20 23:41:30.705 +04:00 [DBG] Creating DbCommand for 'ExecuteNonQuery'.
+2025-09-20 23:41:30.705 +04:00 [DBG] Created DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.705 +04:00 [DBG] Initialized DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.706 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_OrchestrationConfig_DataInterfaceId" ON subscription."OrchestrationConfig" ("DataInterfaceId");
+2025-09-20 23:41:30.706 +04:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_OrchestrationConfig_DataInterfaceId" ON subscription."OrchestrationConfig" ("DataInterfaceId");
+2025-09-20 23:41:30.706 +04:00 [DBG] Creating DbCommand for 'ExecuteNonQuery'.
+2025-09-20 23:41:30.706 +04:00 [DBG] Created DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.706 +04:00 [DBG] Initialized DbCommand for 'ExecuteNonQuery' (0ms).
+2025-09-20 23:41:30.707 +04:00 [DBG] Executing DbCommand [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO subscription."__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20250920194125_InitialCreate', '8.0.0');
+2025-09-20 23:41:30.707 +04:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO subscription."__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20250920194125_InitialCreate', '8.0.0');
+2025-09-20 23:41:30.707 +04:00 [DBG] Committing transaction.
+2025-09-20 23:41:30.709 +04:00 [DBG] Committed transaction.
+2025-09-20 23:41:30.710 +04:00 [DBG] Disposing transaction.
+2025-09-20 23:41:30.710 +04:00 [DBG] Closing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.710 +04:00 [DBG] Closed connection to database 'integration_platform' on server 'tcp://localhost:5480' (0ms).
+2025-09-20 23:41:30.711 +04:00 [DBG] 'SubscriptionDbContext' disposed.
+2025-09-20 23:41:30.712 +04:00 [DBG] Disposing connection to database 'integration_platform' on server 'tcp://localhost:5480'.
+2025-09-20 23:41:30.712 +04:00 [DBG] Disposed connection to database 'integration_platform' on server 'tcp://localhost:5480' (0ms).

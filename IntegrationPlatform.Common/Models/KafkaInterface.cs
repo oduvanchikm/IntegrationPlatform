@@ -1,6 +1,6 @@
 using IntegrationPlatform.Common.Models;
 
-namespace IntegrationPlatform.Publication.API.Models;
+namespace IntegrationPlatform.Common.Models;
 
 public class KafkaInterface : DataInterface
 {
@@ -8,6 +8,5 @@ public class KafkaInterface : DataInterface
     public string Username { get; set; }
     public string Password { get; set; }
     public string TopicName { get; set; }
-    
     public override object GetConnectionDetails() => this;
 }

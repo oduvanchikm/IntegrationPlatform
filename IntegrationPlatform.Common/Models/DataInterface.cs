@@ -9,9 +9,8 @@ public abstract class DataInterface
     public string Description { get; set; }
     public InterfaceType InterfaceType { get; set; }
     public ConnectionStatus Status { get; set; } = ConnectionStatus.Draft;
-    
+    public OrchestrationConfig OrchestrationConfig { get; set; }
     public int ProductId { get; set; }
     public Product Product { get; set; }
-    
     public abstract object GetConnectionDetails();
 }

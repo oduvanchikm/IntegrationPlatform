@@ -4,10 +4,17 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.subscription.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.subscription.{builder.Environment.EnvironmentName}.json", optional: true,
+        reloadOnChange: true)
+    .AddEnvironmentVariables();
+
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .WriteTo.Console()
-    .WriteTo.File("logs/publication-api-.txt", rollingInterval: RollingInterval.Day)
+    .WriteTo.File("logs/subscription-api-.txt", rollingInterval: RollingInterval.Day)
     .CreateLogger();
 
 builder.Host.UseSerilog();

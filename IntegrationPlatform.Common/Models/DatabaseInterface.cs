@@ -1,6 +1,6 @@
 using IntegrationPlatform.Common.Models;
 
-namespace IntegrationPlatform.Publication.API.Models;
+namespace IntegrationPlatform.Common.Models;
 
 public class DatabaseInterface : DataInterface
 {
@@ -10,6 +10,5 @@ public class DatabaseInterface : DataInterface
     public string Password { get; set; }
     public string DatabaseName { get; set; }
     public string Scheme { get; set; }
-    
     public override object GetConnectionDetails() => this;
 }

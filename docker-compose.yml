@@ -37,17 +37,17 @@
     ports:
       - "5002:80"
 
-#  subscription-api:
-#    build:
-#      context: .
-#      dockerfile: IntegrationPlatform.Subscription.API/Dockerfile
-#    container_name: subscription-api
-#    environment:
-#      - ConnectionStrings__SubscriptionDbContext=Host=postgres;Port=5432;Database=integration_platform;Username=admin;Password=password;Search Path=subscription
-#    depends_on:
-#      - postgres
-#    ports:
-#      - "5002:80"
+  subscription-api:
+    build:
+      context: .
+      dockerfile: IntegrationPlatform.Subscription.API/Dockerfile
+    container_name: subscription-api
+    environment:
+      - ConnectionStrings__SubscriptionDbContext=Host=postgres;Port=5432;Database=integration_platform;Username=admin;Password=password;Search Path=subscription
+    depends_on:
+      - postgres
+    ports:
+      - "5003:80"
 
   frontend:
     build:
@@ -59,7 +59,7 @@
     depends_on:
       - publication-api
       - search-api
-#      - subscription-api
+      - subscription-api
 
 volumes:
   postgres_data:

@@ -1,7 +1,9 @@
 FROM nginx:alpine
 
 COPY *.html /usr/share/nginx/html/
-COPY assets/ /usr/share/nginx/html/assets/
+
 COPY nginx.conf /etc/nginx/nginx.conf
+
+RUN mkdir -p /usr/share/nginx/html/assets
 
 EXPOSE 80

@@ -2,13 +2,13 @@ using IntegrationPlatform.Common.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace IntegrationPlatform.Publication.API.DatabaseConnection.Configurations;
+namespace IntegrationPlatform.Subscription.API.DatabaseConnection.Configurations;
 
 public class ApiInterfaceConfiguration : IEntityTypeConfiguration<ApiInterface>
 {
     public void Configure(EntityTypeBuilder<ApiInterface> builder)
     {
-        builder.ToTable("ApiInterface", "publication");
+        builder.ToTable("ApiInterface", "subscription");
 
         builder.Property(e => e.Host)
             .IsRequired()

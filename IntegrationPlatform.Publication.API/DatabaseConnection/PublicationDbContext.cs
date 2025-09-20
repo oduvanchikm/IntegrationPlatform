@@ -1,6 +1,5 @@
 using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Publication.API.DatabaseConnection.Configurations;
-using IntegrationPlatform.Publication.API.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace IntegrationPlatform.Publication.API.DatabaseConnection;

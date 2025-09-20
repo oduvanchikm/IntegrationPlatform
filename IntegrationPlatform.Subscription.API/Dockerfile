@@ -7,15 +7,20 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+
 COPY ["IntegrationPlatform.Subscription.API/IntegrationPlatform.Subscription.API.csproj", "IntegrationPlatform.Subscription.API/"]
+COPY ["IntegrationPlatform.Common/IntegrationPlatform.Common.csproj", "IntegrationPlatform.Common/"]
+
 RUN dotnet restore "IntegrationPlatform.Subscription.API/IntegrationPlatform.Subscription.API.csproj"
-COPY . .
+
+COPY ["IntegrationPlatform.Subscription.API/", "IntegrationPlatform.Subscription.API/"]
+COPY ["IntegrationPlatform.Common/", "IntegrationPlatform.Common/"]
+
 WORKDIR "/src/IntegrationPlatform.Subscription.API"
-RUN dotnet build "IntegrationPlatform.Subscription.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build -c Release -o /app/build
 
 FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "IntegrationPlatform.Subscription.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app

@@ -3,13 +3,13 @@ using IntegrationPlatform.Common.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace IntegrationPlatform.Publication.API.DatabaseConnection.Configurations;
+namespace IntegrationPlatform.Subscription.API.DatabaseConnection.Configurations;
 
 public class DataInterfaceConfiguration : IEntityTypeConfiguration<DataInterface>
 {
     public void Configure(EntityTypeBuilder<DataInterface> builder)
     {
-        builder.ToTable("DataInterfaces", "publication");
+        builder.ToTable("DataInterfaces", "subscription");
 
         builder.HasKey(p => p.Id);
 
@@ -32,6 +32,11 @@ public class DataInterfaceConfiguration : IEntityTypeConfiguration<DataInterface
         builder.HasOne(di => di.Product)
             .WithMany(p => p.Interfaces)
             .HasForeignKey(di => di.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.HasOne(di => di.OrchestrationConfig)
+            .WithOne(oc => oc.DataInterface)
+            .HasForeignKey<OrchestrationConfig>(oc => oc.DataInterfaceId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

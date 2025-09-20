@@ -31,9 +31,7 @@
 
     <ItemGroup>
         <Folder Include="Controllers\" />
-        <Folder Include="DatabaseConnection\Configurations\" />
         <Folder Include="DatabaseConnection\Migrations\"/>
-        <Folder Include="Models\" />
     </ItemGroup>
 
 </Project>

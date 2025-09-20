@@ -1,6 +1,6 @@
 using IntegrationPlatform.Common.Models;
 
-namespace IntegrationPlatform.Publication.API.Models;
+namespace IntegrationPlatform.Common.Models;
 
 public class ApiInterface : DataInterface
 {

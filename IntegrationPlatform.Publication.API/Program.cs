@@ -4,6 +4,14 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+builder.Configuration
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.publication.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.publication.{builder.Environment.EnvironmentName}.json", optional: true,
+        reloadOnChange: true)
+    .AddEnvironmentVariables();
+
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .WriteTo.Console()

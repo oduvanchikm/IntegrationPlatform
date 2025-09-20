@@ -2,13 +2,13 @@ using IntegrationPlatform.Common.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace IntegrationPlatform.Publication.API.DatabaseConnection.Configurations;
+namespace IntegrationPlatform.Subscription.API.DatabaseConnection.Configurations;
 
 public class DatabaseInterfaceConfiguration : IEntityTypeConfiguration<DatabaseInterface>
 {
     public void Configure(EntityTypeBuilder<DatabaseInterface> builder)
     {
-        builder.ToTable("DatabaseInterface", "publication");
+        builder.ToTable("DatabaseInterface", "subscription");
 
         builder.Property(e => e.Username)
             .IsRequired()

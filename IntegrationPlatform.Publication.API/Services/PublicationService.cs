@@ -3,7 +3,6 @@ using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Publication.API.DatabaseConnection;
 using IntegrationPlatform.Publication.API.DTO;
 using IntegrationPlatform.Publication.API.Interfaces;
-using IntegrationPlatform.Publication.API.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace IntegrationPlatform.Publication.API.Services;

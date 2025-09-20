@@ -33,4 +33,8 @@
         <Folder Include="DatabaseConnection\Migrations\"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="wwwroot\index.html" />
+    </ItemGroup>
+
 </Project>

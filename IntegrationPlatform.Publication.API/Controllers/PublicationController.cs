@@ -10,7 +10,7 @@ public class PublicationController(IPublicationService publicationService) : Con
 {
     private readonly IPublicationService _publicationService = publicationService;
 
-    [HttpPost("interfaces")]
+    [HttpPost("interfaces")] 
     public async Task<IActionResult> PublishInterface([FromBody] InterfacePublishRequest request)
     {
         var result = await _publicationService.PublishInterfaceAsync(request);

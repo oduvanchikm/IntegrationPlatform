@@ -1,17 +1,12 @@
 using IntegrationPlatform.Search.API.Interfaces;
-using IntegrationPlatform.Publication.API.DatabaseConnection;
+using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using IntegrationPlatform.Search.API.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Configuration
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.search.json", optional: false, reloadOnChange: true)
-    .AddJsonFile($"appsettings.search.{builder.Environment.EnvironmentName}.json", optional: true,
-        reloadOnChange: true)
-    .AddEnvironmentVariables();
+builder.Configuration.AddJsonFile("appsettings.json", optional: false);
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
@@ -23,21 +18,26 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContext<PublicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DiscoveryDbContext")));
+builder.Services.AddDbContextFactory<PublicationDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("PublicationDbContext")));
 
 builder.Services.AddScoped<ISearchService, SearchService>();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
+app.UseCors(policy => policy
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader());
+
 app.UseAuthorization();
+
 app.MapControllers();
+app.UseStaticFiles();
+
+app.Urls.Add("http://0.0.0.0:8080");
 
 app.Run();

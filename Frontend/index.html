@@ -6,56 +6,70 @@
     <title>Integration Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .hidden { display: none; }
-        .active-tab { background-color: #3b82f6; color: white; }
-        .tab { cursor: pointer; transition: all 0.3s; }
-        .tab:hover { background-color: #e5e7eb; }
-        .section { display: none; }
-        .section.active { display: block; }
+        .hidden {
+            display: none;
+        }
+
+        .active-tab {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .tab {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background-color: #e5e7eb;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
 <div class="container mx-auto p-4 md:p-6">
     <header class="bg-white shadow-sm rounded-lg p-4 md:p-6 mb-6 md:mb-8">
         <h1 class="text-2xl md:text-3xl font-bold text-center">Integration Platform</h1>
-        <nav class="flex flex-wrap justify-center space-x-0 md:space-x-6 space-y-2 md:space-y-0 mt-4">
-            <div class="tab rounded-lg px-4 py-2 active-tab" data-tab="home">Home</div>
-            <div class="tab rounded-lg px-4 py-2" data-tab="publication">Publication</div>
-            <div class="tab rounded-lg px-4 py-2" data-tab="discovery">Discovery</div>
-            <div class="tab rounded-lg px-4 py-2" data-tab="subscription">Subscription</div>
-        </nav>
     </header>
 
-    <!-- Home Section -->
     <div id="home" class="section active">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
             <div class="bg-white p-4 md:p-6 rounded-lg shadow text-center">
-                <h2 class="text-xl font-semibold mb-4">📤 Publication</h2>
+                <h2 class="text-xl font-semibold mb-4">Publication</h2>
                 <p class="text-gray-600 mb-4">Publish new integration interfaces</p>
-                <div class="tab bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded cursor-pointer" data-tab="publication">
+                <div class="tab bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded cursor-pointer"
+                     data-tab="publication">
                     Go to Publication
                 </div>
             </div>
 
-            <div class="bg-white p-4 md:p-6 rounded-lg shadow text-center">
-                <h2 class="text-xl font-semibold mb-4">🔍 Discovery</h2>
-                <p class="text-gray-600 mb-4">Search for existing interfaces</p>
-                <div class="tab bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded cursor-pointer" data-tab="discovery">
-                    Go to Discovery
-                </div>
-            </div>
+            <!--            <div class="bg-white p-4 md:p-6 rounded-lg shadow text-center">-->
+            <!--                <h2 class="text-xl font-semibold mb-4">Search</h2>-->
+            <!--                <p class="text-gray-600 mb-4">Search for existing interfaces</p>-->
+            <!--                <div class="tab bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded cursor-pointer"-->
+            <!--                     data-tab="discovery">-->
+            <!--                    Go to Search-->
+            <!--                </div>-->
+            <!--            </div>-->
 
-            <div class="bg-white p-4 md:p-6 rounded-lg shadow text-center">
-                <h2 class="text-xl font-semibold mb-4">🔌 Subscription</h2>
-                <p class="text-gray-600 mb-4">Manage integrations & connections</p>
-                <div class="tab bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded cursor-pointer" data-tab="subscription">
-                    Go to Subscription
-                </div>
-            </div>
+            <!--            <div class="bg-white p-4 md:p-6 rounded-lg shadow text-center">-->
+            <!--                <h2 class="text-xl font-semibold mb-4">Subscription</h2>-->
+            <!--                <p class="text-gray-600 mb-4">Manage integrations & connections</p>-->
+            <!--                <div class="tab bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded cursor-pointer"-->
+            <!--                     data-tab="subscription">-->
+            <!--                    Go to Subscription-->
+            <!--                </div>-->
+            <!--            </div>-->
         </div>
     </div>
 
-    <!-- Publication Section -->
     <div id="publication" class="section">
         <div class="bg-white p-4 md:p-6 rounded-lg shadow mb-6 md:mb-8">
             <h2 class="text-xl font-semibold mb-4">Publish New Interface</h2>
@@ -63,27 +77,32 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                     <label class="block text-sm font-medium mb-1">Product Name *</label>
-                    <input type="text" id="productName" placeholder="e.g., UserService" class="w-full p-2 border rounded" required>
+                    <input type="text" id="productName" placeholder="e.g., UserService"
+                           class="w-full p-2 border rounded" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Interface Name *</label>
-                    <input type="text" id="interfaceName" placeholder="e.g., UserEvents API" class="w-full p-2 border rounded" required>
+                    <input type="text" id="interfaceName" placeholder="e.g., UserEvents API"
+                           class="w-full p-2 border rounded" required>
                 </div>
             </div>
 
             <div class="mb-4">
                 <label class="block text-sm font-medium mb-1">Description</label>
-                <textarea id="description" placeholder="Describe the purpose of this interface..." class="w-full p-2 border rounded" rows="2"></textarea>
+                <label for="description"></label><textarea id="description"
+                                                           placeholder="Describe the purpose of this interface..."
+                                                           class="w-full p-2 border rounded" rows="2"></textarea>
             </div>
 
             <div class="mb-4">
                 <label class="block text-sm font-medium mb-1">Interface Type *</label>
-                <select id="interfaceType" class="w-full p-2 border rounded" onchange="showInterfaceFields()">
-                    <option value="">Select Interface Type</option>
-                    <option value="Api">REST API</option>
-                    <option value="Database">Database</option>
-                    <option value="Kafka">Kafka Topic</option>
-                </select>
+                <label for="interfaceType"></label><select id="interfaceType" class="w-full p-2 border rounded"
+                                                           onchange="showInterfaceFields()">
+                <option value="">Select Interface Type</option>
+                <option value="Api">REST API</option>
+                <option value="Database">Database</option>
+                <option value="Kafka">Kafka Topic</option>
+            </select>
             </div>
 
             <div id="apiFields" class="hidden space-y-3 mb-4">
@@ -91,27 +110,33 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium mb-1">Host</label>
-                        <input type="text" id="host" placeholder="e.g., api.example.com" class="w-full p-2 border rounded">
+                        <label for="host"></label><input type="text" id="host" placeholder="e.g., api.example.com"
+                                                         class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Port</label>
-                        <input type="text" id="port" placeholder="e.g., 443" class="w-full p-2 border rounded">
+                        <label for="port"></label><input type="text" id="port" placeholder="e.g., 443"
+                                                         class="w-full p-2 border rounded">
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium mb-1">Endpoint</label>
-                        <input type="text" id="endpoint" placeholder="e.g., /api/v1/users" class="w-full p-2 border rounded">
+                        <label for="endpoint"></label><input type="text" id="endpoint" placeholder="e.g., /api/v1/users"
+                                                             class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Username</label>
-                        <input type="text" id="username" placeholder="API username" class="w-full p-2 border rounded">
+                        <label for="username"></label><input type="text" id="username" placeholder="API username"
+                                                             class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Password</label>
-                        <input type="password" id="password" placeholder="API password" class="w-full p-2 border rounded">
+                        <label for="password"></label><input type="password" id="password" placeholder="API password"
+                                                             class="w-full p-2 border rounded">
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium mb-1">Token (optional)</label>
-                        <input type="text" id="token" placeholder="Bearer token" class="w-full p-2 border rounded">
+                        <label for="token"></label><input type="text" id="token" placeholder="Bearer token"
+                                                          class="w-full p-2 border rounded">
                     </div>
                 </div>
             </div>
@@ -121,27 +146,35 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium mb-1">Host</label>
-                        <input type="text" id="dbHost" placeholder="e.g., database.server.com" class="w-full p-2 border rounded">
+                        <label for="dbHost"></label><input type="text" id="dbHost"
+                                                           placeholder="e.g., database.server.com"
+                                                           class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Port</label>
-                        <input type="text" id="dbPort" placeholder="e.g., 5432" class="w-full p-2 border rounded">
+                        <label for="dbPort"></label><input type="text" id="dbPort" placeholder="e.g., 5432"
+                                                           class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Database Name</label>
-                        <input type="text" id="dbName" placeholder="e.g., production_db" class="w-full p-2 border rounded">
+                        <input type="text" id="dbName" placeholder="e.g., production_db"
+                               class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Schema</label>
-                        <input type="text" id="dbSchema" placeholder="e.g., public" class="w-full p-2 border rounded">
+                        <label for="dbSchema"></label><input type="text" id="dbSchema" placeholder="e.g., public"
+                                                             class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Username</label>
-                        <input type="text" id="dbUsername" placeholder="Database user" class="w-full p-2 border rounded">
+                        <label for="dbUsername"></label><input type="text" id="dbUsername" placeholder="Database user"
+                                                               class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Password</label>
-                        <input type="password" id="dbPassword" placeholder="Database password" class="w-full p-2 border rounded">
+                        <label for="dbPassword"></label><input type="password" id="dbPassword"
+                                                               placeholder="Database password"
+                                                               class="w-full p-2 border rounded">
                     </div>
                 </div>
             </div>
@@ -151,29 +184,34 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium mb-1">Bootstrap Servers</label>
-                        <input type="text" id="bootstrapServers" placeholder="e.g., kafka1:9092,kafka2:9092" class="w-full p-2 border rounded">
+                        <label for="bootstrapServers"></label><input type="text" id="bootstrapServers"
+                                                                     placeholder="e.g., kafka1:9092,kafka2:9092"
+                                                                     class="w-full p-2 border rounded">
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium mb-1">Topic Name</label>
-                        <input type="text" id="topicName" placeholder="e.g., user-events" class="w-full p-2 border rounded">
+                        <label for="topicName"></label><input type="text" id="topicName" placeholder="e.g., user-events"
+                                                              class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Username</label>
-                        <input type="text" id="kafkaUsername" placeholder="Kafka user" class="w-full p-2 border rounded">
+                        <label for="kafkaUsername"></label><input type="text" id="kafkaUsername"
+                                                                  placeholder="Kafka user"
+                                                                  class="w-full p-2 border rounded">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Password</label>
-                        <input type="password" id="kafkaPassword" placeholder="Kafka password" class="w-full p-2 border rounded">
+                        <label for="kafkaPassword"></label><input type="password" id="kafkaPassword"
+                                                                  placeholder="Kafka password"
+                                                                  class="w-full p-2 border rounded">
                     </div>
                 </div>
             </div>
 
             <div class="flex space-x-4">
-                <button onclick="publishInterface()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 md:px-6 py-2 rounded">
+                <button onclick="publishInterface()"
+                        class="bg-blue-500 hover:bg-blue-600 text-white px-4 md:px-6 py-2 rounded">
                     Publish Interface
-                </button>
-                <button onclick="clearForm()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 md:px-6 py-2 rounded">
-                    Clear Form
                 </button>
             </div>
 
@@ -188,85 +226,83 @@
         </div>
     </div>
 
-    <!-- Discovery Section -->
-    <div id="discovery" class="section">
-        <div class="bg-white p-4 md:p-6 rounded-lg shadow mb-6 md:mb-8">
-            <h2 class="text-xl font-semibold mb-4">Search Interfaces</h2>
+    <!--    <div id="search" class="section">-->
+    <!--        <div class="bg-white p-4 md:p-6 rounded-lg shadow mb-6 md:mb-8">-->
+    <!--            <h2 class="text-xl font-semibold mb-4">Search Interfaces</h2>-->
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <input type="text" id="productSearch" placeholder="Product name" class="p-2 border rounded">
-                <input type="text" id="interfaceSearch" placeholder="Interface name" class="p-2 border rounded">
-                <select id="typeSearch" class="p-2 border rounded">
-                    <option value="">All types</option>
-                    <option value="Api">API</option>
-                    <option value="Database">Database</option>
-                    <option value="Kafka">Kafka</option>
-                </select>
-            </div>
+    <!--            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">-->
+    <!--                <label for="productSearch"></label><input type="text" id="productSearch" placeholder="Product name" class="p-2 border rounded">-->
+    <!--                <label for="interfaceSearch"></label><input type="text" id="interfaceSearch" placeholder="Interface name" class="p-2 border rounded">-->
+    <!--                <label for="typeSearch"></label><select id="typeSearch" class="p-2 border rounded">-->
+    <!--                    <option value="">All types</option>-->
+    <!--                    <option value="Api">API</option>-->
+    <!--                    <option value="Database">Database</option>-->
+    <!--                    <option value="Kafka">Kafka</option>-->
+    <!--                </select>-->
+    <!--            </div>-->
 
-            <button onclick="searchInterfaces()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
-                Search
-            </button>
-        </div>
+    <!--            <button onclick="searchInterfaces()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">-->
+    <!--                Search-->
+    <!--            </button>-->
+    <!--        </div>-->
 
-        <div class="bg-white p-4 md:p-6 rounded-lg shadow">
-            <h2 class="text-xl font-semibold mb-4">Search Results</h2>
-            <div id="searchResults" class="space-y-4">
-                <div class="text-gray-500 text-center">No results yet. Perform a search to see interfaces.</div>
-            </div>
-        </div>
-    </div>
+    <!--        <div class="bg-white p-4 md:p-6 rounded-lg shadow">-->
+    <!--            <h2 class="text-xl font-semibold mb-4">Search Results</h2>-->
+    <!--            <div id="searchResults" class="space-y-4">-->
+    <!--                <div class="text-gray-500 text-center">No results yet. Perform a search to see interfaces.</div>-->
+    <!--            </div>-->
+    <!--        </div>-->
+    <!--    </div>-->
 
-    <!-- Subscription Section -->
-    <div id="subscription" class="section">
-        <div class="bg-white p-4 md:p-6 rounded-lg shadow mb-6 md:mb-8">
-            <h2 class="text-xl font-semibold mb-4">My Subscriptions</h2>
-            <div id="subscriptionsList" class="space-y-4">
-                <div class="text-gray-500 text-center">No subscriptions yet. Discover interfaces to subscribe.</div>
-            </div>
-        </div>
+    <!--    <div id="subscription" class="section">-->
+    <!--        <div class="bg-white p-4 md:p-6 rounded-lg shadow mb-6 md:mb-8">-->
+    <!--            <h2 class="text-xl font-semibold mb-4">My Subscriptions</h2>-->
+    <!--            <div id="subscriptionsList" class="space-y-4">-->
+    <!--                <div class="text-gray-500 text-center">No subscriptions yet. Discover interfaces to subscribe.</div>-->
+    <!--            </div>-->
+    <!--        </div>-->
 
-        <div class="bg-white p-4 md:p-6 rounded-lg shadow">
-            <h2 class="text-xl font-semibold mb-4">Orchestration Configuration</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label class="block text-sm font-medium mb-1">Schedule (Cron)</label>
-                    <input type="text" id="scheduleCron" placeholder="e.g., */5 * * * *" value="*/5 * * * *" class="w-full p-2 border rounded">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Max Retry Attempts</label>
-                    <input type="number" id="maxRetryAttempts" value="3" min="1" class="w-full p-2 border rounded">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Retry Delay (seconds)</label>
-                    <input type="number" id="retryDelaySeconds" value="60" min="1" class="w-full p-2 border rounded">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Execution Timeout (seconds)</label>
-                    <input type="number" id="executionTimeoutSeconds" value="300" min="1" class="w-full p-2 border rounded">
-                </div>
-            </div>
-            <button onclick="saveOrchestrationConfig()" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
-                Save Configuration
-            </button>
-            <div id="configResult" class="mt-4 p-3 rounded hidden"></div>
-        </div>
-    </div>
+    <!--        <div class="bg-white p-4 md:p-6 rounded-lg shadow">-->
+    <!--            <h2 class="text-xl font-semibold mb-4">Orchestration Configuration</h2>-->
+    <!--            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">-->
+    <!--                <div>-->
+    <!--                    <label class="block text-sm font-medium mb-1">Schedule (Cron)</label>-->
+    <!--                    <label for="scheduleCron"></label><input type="text" id="scheduleCron" placeholder="e.g., */5 * * * *" value="*/5 * * * *"-->
+    <!--                                                             class="w-full p-2 border rounded">-->
+    <!--                </div>-->
+    <!--                <div>-->
+    <!--                    <label class="block text-sm font-medium mb-1">Max Retry Attempts</label>-->
+    <!--                    <label for="maxRetryAttempts"></label><input type="number" id="maxRetryAttempts" value="3" min="1" class="w-full p-2 border rounded">-->
+    <!--                </div>-->
+    <!--                <div>-->
+    <!--                    <label class="block text-sm font-medium mb-1">Retry Delay (seconds)</label>-->
+    <!--                    <label for="retryDelaySeconds"></label><input type="number" id="retryDelaySeconds" value="60" min="1" class="w-full p-2 border rounded">-->
+    <!--                </div>-->
+    <!--                <div>-->
+    <!--                    <label class="block text-sm font-medium mb-1">Execution Timeout (seconds)</label>-->
+    <!--                    <label for="executionTimeoutSeconds"></label><input type="number" id="executionTimeoutSeconds" value="300" min="1"-->
+    <!--                                                                        class="w-full p-2 border rounded">-->
+    <!--                </div>-->
+    <!--            </div>-->
+    <!--            <button onclick="saveOrchestrationConfig()"-->
+    <!--                    class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">-->
+    <!--                Save Configuration-->
+    <!--            </button>-->
+    <!--            <div id="configResult" class="mt-4 p-3 rounded hidden"></div>-->
+    <!--        </div>-->
+    <!--    </div>-->
 </div>
 
 <script>
-    // Tab navigation
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', () => {
             const tabId = tab.getAttribute('data-tab');
 
-            // Update active tab
             document.querySelectorAll('.tab').forEach(t => {
                 t.classList.remove('active-tab');
             });
             tab.classList.add('active-tab');
 
-            // Show active section
             document.querySelectorAll('.section').forEach(section => {
                 section.classList.remove('active');
             });
@@ -274,7 +310,6 @@
         });
     });
 
-    // Publication functions
     function showInterfaceFields() {
         const type = document.getElementById('interfaceType').value;
 
@@ -285,21 +320,6 @@
         if (type === 'Api') document.getElementById('apiFields').classList.remove('hidden');
         if (type === 'Database') document.getElementById('dbFields').classList.remove('hidden');
         if (type === 'Kafka') document.getElementById('kafkaFields').classList.remove('hidden');
-    }
-
-    function clearForm() {
-        document.getElementById('productName').value = '';
-        document.getElementById('interfaceName').value = '';
-        document.getElementById('description').value = '';
-        document.getElementById('interfaceType').value = '';
-
-        const allInputs = document.querySelectorAll('input');
-        allInputs.forEach(input => {
-            if (input.type !== 'button') input.value = '';
-        });
-
-        showInterfaceFields();
-        document.getElementById('publishResult').classList.add('hidden');
     }
 
     async function publishInterface() {
@@ -402,7 +422,6 @@
             `).join('');
     }
 
-    // Discovery functions
     async function searchInterfaces() {
         const productName = document.getElementById('productSearch').value;
         const interfaceName = document.getElementById('interfaceSearch').value;
@@ -454,7 +473,6 @@
     }
 
     function subscribeToInterface(interfaceId) {
-        // Switch to subscription tab
         document.querySelectorAll('.tab').forEach(t => {
             t.classList.remove('active-tab');
         });
@@ -465,11 +483,9 @@
         });
         document.getElementById('subscription').classList.add('active');
 
-        // You can implement the subscription logic here
         alert(`Subscribing to interface ID: ${interfaceId}`);
     }
 
-    // Subscription functions
     async function saveOrchestrationConfig() {
         const config = {
             ScheduleCron: document.getElementById('scheduleCron').value,
@@ -503,8 +519,7 @@
         }
     }
 
-    // Initialize
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         showInterfaceFields();
         loadRecentInterfaces();
     });

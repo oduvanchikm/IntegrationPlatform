@@ -1,4 +1,4 @@
-using IntegrationPlatform.Publication.API.DTO;
+using IntegrationPlatform.Publication.DataAccess.DTO;
 
 namespace IntegrationPlatform.Publication.API.Interfaces;
 

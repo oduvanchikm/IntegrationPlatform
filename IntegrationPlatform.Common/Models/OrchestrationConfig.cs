@@ -9,6 +9,8 @@ public class OrchestrationConfig
     public DataInterface DataInterface { get; set; }
     
     public string ScheduleCron { get; set; } = "*/5 * * * *";
+    
+    
     public int MaxRetryAttempts { get; set; } = 3;
     public int RetryDelaySeconds { get; set; } = 60;
     public int ExecutionTimeoutSeconds { get; set; } = 300;

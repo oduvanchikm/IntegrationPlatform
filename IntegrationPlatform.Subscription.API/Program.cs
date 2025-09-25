@@ -1,15 +1,10 @@
-using IntegrationPlatform.Subscription.API.DatabaseConnection;
+using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Configuration
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.subscription.json", optional: false, reloadOnChange: true)
-    .AddJsonFile($"appsettings.subscription.{builder.Environment.EnvironmentName}.json", optional: true,
-        reloadOnChange: true)
-    .AddEnvironmentVariables();
+builder.Configuration.AddJsonFile("appsettings.json", optional: false);
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
@@ -24,22 +19,23 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContextFactory<SubscriptionDbContext>(options =>
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("SubscriptionDbContext"),
-        x => x.MigrationsHistoryTable("__EFMigrationsHistory", "subscription")
-    ));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("SubscriptionDbContext")));
 
 var app = builder.Build();
 
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseCors("AllowFrontend");
-app.UseAuthorization();
-app.MapControllers();
+app.UseCors(policy => policy
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader());
 
+app.UseAuthorization();
+
+app.MapControllers();
 app.UseStaticFiles();
 
-app.MapGet("/", () => Results.Redirect("/index.html"));
+app.Urls.Add("http://0.0.0.0:8080");
 
 app.Run();

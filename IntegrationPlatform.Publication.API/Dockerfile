@@ -9,11 +9,15 @@ WORKDIR /src
 
 COPY ["IntegrationPlatform.Publication.API/IntegrationPlatform.Publication.API.csproj", "IntegrationPlatform.Publication.API/"]
 COPY ["IntegrationPlatform.Common/IntegrationPlatform.Common.csproj", "IntegrationPlatform.Common/"]
+COPY ["IntegrationPlatform.Publication.DataAccess/IntegrationPlatform.Publication.DataAccess.csproj", "IntegrationPlatform.Publication.DataAccess/"]
 
 RUN dotnet restore "IntegrationPlatform.Publication.API/IntegrationPlatform.Publication.API.csproj"
 
 COPY ["IntegrationPlatform.Publication.API/", "IntegrationPlatform.Publication.API/"]
 COPY ["IntegrationPlatform.Common/", "IntegrationPlatform.Common/"]
+COPY ["IntegrationPlatform.Publication.DataAccess/", "IntegrationPlatform.Publication.DataAccess/"]
+
+COPY ["IntegrationPlatform.Publication.API/appsettings*.json", "/app/"]
 
 WORKDIR "/src/IntegrationPlatform.Publication.API"
 RUN dotnet build -c Release -o /app/build

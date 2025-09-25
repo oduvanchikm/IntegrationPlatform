@@ -26,8 +26,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="../IntegrationPlatform.Common/IntegrationPlatform.Common.csproj"/>
-        <ProjectReference Include="../IntegrationPlatform.Publication.API/IntegrationPlatform.Publication.API.csproj"/>
+        <ProjectReference Include="..\IntegrationPlatform.Common\IntegrationPlatform.Common.csproj"/>
+        <ProjectReference Include="../IntegrationPlatform.Publication.DataAccess/IntegrationPlatform.Publication.DataAccess.csproj"/>
     </ItemGroup>
 
 </Project>

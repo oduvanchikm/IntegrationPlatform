@@ -1,8 +1,8 @@
 using IntegrationPlatform.Common.Models;
-using IntegrationPlatform.Publication.API.DatabaseConnection.Configurations;
+using IntegrationPlatform.Publication.DataAccess.DatabaseConnection.Configurations;
 using Microsoft.EntityFrameworkCore;
 
-namespace IntegrationPlatform.Publication.API.DatabaseConnection;
+namespace IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 
 public class PublicationDbContext(DbContextOptions<PublicationDbContext> options) : DbContext(options)
 {

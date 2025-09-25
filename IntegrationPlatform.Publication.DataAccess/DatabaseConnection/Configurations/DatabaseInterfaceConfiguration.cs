@@ -2,7 +2,7 @@ using IntegrationPlatform.Common.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace IntegrationPlatform.Publication.API.DatabaseConnection.Configurations;
+namespace IntegrationPlatform.Publication.DataAccess.DatabaseConnection.Configurations;
 
 public class DatabaseInterfaceConfiguration : IEntityTypeConfiguration<DatabaseInterface>
 {

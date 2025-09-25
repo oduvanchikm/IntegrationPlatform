@@ -26,12 +26,13 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="../IntegrationPlatform.Common/IntegrationPlatform.Common.csproj"/>
+        <ProjectReference Include="..\IntegrationPlatform.Common\IntegrationPlatform.Common.csproj"/>
+        <ProjectReference Include="../IntegrationPlatform.Publication.DataAccess/IntegrationPlatform.Publication.DataAccess.csproj"/>
+        <ProjectReference Include="..\IntegrationPlatform.Subscription.DataAccess\IntegrationPlatform.Subscription.DataAccess.csproj" />
     </ItemGroup>
 
     <ItemGroup>
         <Folder Include="Controllers\" />
-        <Folder Include="DatabaseConnection\Migrations\"/>
     </ItemGroup>
 
 </Project>

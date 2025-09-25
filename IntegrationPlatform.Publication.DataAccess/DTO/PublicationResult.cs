@@ -1,4 +1,4 @@
-namespace IntegrationPlatform.Publication.API.DTO;
+namespace IntegrationPlatform.Publication.DataAccess.DTO;
 
 public class PublicationResult
 {

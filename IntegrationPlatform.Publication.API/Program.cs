@@ -1,16 +1,12 @@
-using IntegrationPlatform.Publication.API.DatabaseConnection;
+using IntegrationPlatform.Publication.API.Interfaces;
+using IntegrationPlatform.Publication.API.Services;
+using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-builder.Configuration
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.publication.json", optional: false, reloadOnChange: true)
-    .AddJsonFile($"appsettings.publication.{builder.Environment.EnvironmentName}.json", optional: true,
-        reloadOnChange: true)
-    .AddEnvironmentVariables();
+builder.Configuration.AddJsonFile("appsettings.json", optional: false);
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
@@ -25,22 +21,26 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContextFactory<PublicationDbContext>(options =>
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("PublicationDbContext"),
-        x => x.MigrationsHistoryTable("__EFMigrationsHistory", "publication")
-    ));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("PublicationDbContext")));
+
+builder.Services.AddScoped<IPublicationService, PublicationService>();
 
 var app = builder.Build();
 
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseCors("AllowFrontend");
+app.UseCors(policy => policy
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader());
+
 app.UseAuthorization();
+
 app.MapControllers();
-
 app.UseStaticFiles();
-
 app.MapGet("/", () => Results.Redirect("/index.html"));
+
+app.Urls.Add("http://0.0.0.0:8080");
 
 app.Run();

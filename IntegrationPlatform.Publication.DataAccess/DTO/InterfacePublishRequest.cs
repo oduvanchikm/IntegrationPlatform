@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using IntegrationPlatform.Common.Enums;
 
-namespace IntegrationPlatform.Publication.API.DTO;
+namespace IntegrationPlatform.Publication.DataAccess.DTO;
 
 public class InterfacePublishRequest
 {

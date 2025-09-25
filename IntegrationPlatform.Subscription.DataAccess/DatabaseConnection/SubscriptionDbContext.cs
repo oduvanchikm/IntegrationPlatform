@@ -1,8 +1,8 @@
 using IntegrationPlatform.Common.Models;
-using IntegrationPlatform.Subscription.API.DatabaseConnection.Configurations;
+using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection.Configurations;
 using Microsoft.EntityFrameworkCore;
 
-namespace IntegrationPlatform.Subscription.API.DatabaseConnection;
+namespace IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
 
 public class SubscriptionDbContext(DbContextOptions<SubscriptionDbContext> options) : DbContext(options)
 {

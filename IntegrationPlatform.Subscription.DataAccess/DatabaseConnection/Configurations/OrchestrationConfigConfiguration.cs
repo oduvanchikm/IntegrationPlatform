@@ -2,7 +2,7 @@ using IntegrationPlatform.Common.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace IntegrationPlatform.Subscription.API.DatabaseConnection.Configurations;
+namespace IntegrationPlatform.Subscription.DataAccess.DatabaseConnection.Configurations;
 
 public class OrchestrationConfigConfiguration : IEntityTypeConfiguration<OrchestrationConfig>
 {

@@ -10,11 +10,16 @@ WORKDIR /src
 
 COPY ["IntegrationPlatform.Subscription.API/IntegrationPlatform.Subscription.API.csproj", "IntegrationPlatform.Subscription.API/"]
 COPY ["IntegrationPlatform.Common/IntegrationPlatform.Common.csproj", "IntegrationPlatform.Common/"]
+COPY ["IntegrationPlatform.Subscription.DataAccess/IntegrationPlatform.Subscription.DataAccess.csproj", "IntegrationPlatform.Subscription.DataAccess/"]
+
 
 RUN dotnet restore "IntegrationPlatform.Subscription.API/IntegrationPlatform.Subscription.API.csproj"
 
 COPY ["IntegrationPlatform.Subscription.API/", "IntegrationPlatform.Subscription.API/"]
 COPY ["IntegrationPlatform.Common/", "IntegrationPlatform.Common/"]
+COPY ["IntegrationPlatform.Subscription.DataAccess/", "IntegrationPlatform.Subscription.DataAccess/"]
+
+COPY ["IntegrationPlatform.Search.API/appsettings*.json", "/app/"]
 
 WORKDIR "/src/IntegrationPlatform.Subscription.API"
 RUN dotnet build -c Release -o /app/build

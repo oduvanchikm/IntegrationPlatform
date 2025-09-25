@@ -1,5 +1,5 @@
 using IntegrationPlatform.Common.Enums;
-using IntegrationPlatform.Publication.API.DatabaseConnection;
+using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using IntegrationPlatform.Search.API.DTO;
 using IntegrationPlatform.Search.API.Interfaces;
 using Microsoft.EntityFrameworkCore;

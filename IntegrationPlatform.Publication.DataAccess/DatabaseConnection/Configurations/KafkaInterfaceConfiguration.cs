@@ -2,13 +2,13 @@ using IntegrationPlatform.Common.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace IntegrationPlatform.Subscription.API.DatabaseConnection.Configurations;
+namespace IntegrationPlatform.Publication.DataAccess.DatabaseConnection.Configurations;
 
 public class KafkaInterfaceConfiguration : IEntityTypeConfiguration<KafkaInterface>
 {
     public void Configure(EntityTypeBuilder<KafkaInterface> builder)
     {
-        builder.ToTable("KafkaInterface", "subscription");
+        builder.ToTable("KafkaInterface", "publication");
 
         builder.Property(k => k.Username)
             .IsRequired()

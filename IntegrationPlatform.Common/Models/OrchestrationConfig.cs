@@ -1,3 +1,4 @@
+using IntegrationPlatform.Common.Enums;
 using IntegrationPlatform.Common.Models;
 
 namespace IntegrationPlatform.Common.Models;
@@ -5,9 +6,10 @@ namespace IntegrationPlatform.Common.Models;
 public class OrchestrationConfig
 {
     public int Id { get; set; }
-    public int DataInterfaceId { get; set; }
+    public int InterfaceSubscriptionId { get; set; }
     public DataInterface DataInterface { get; set; }
-    
+    public int InterfacePublicationId { get; set; }
+    public IntegrationPattern IntegrationPattern { get; set; }
     public string ScheduleCron { get; set; } = "*/5 * * * *";
     public int MaxRetryAttempts { get; set; } = 3;
     public int RetryDelaySeconds { get; set; } = 60;

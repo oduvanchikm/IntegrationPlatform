@@ -12,6 +12,18 @@ public class OrchestrationConfigConfiguration : IEntityTypeConfiguration<Orchest
 
         builder.HasKey(e => e.Id);
 
+        builder.HasOne(oc => oc.DataInterface)
+            .WithOne(di => di.OrchestrationConfig)
+            .HasForeignKey<OrchestrationConfig>(oc => oc.InterfaceSubscriptionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Property(oc => oc.InterfacePublicationId)
+            .IsRequired();
+
+        builder.Property(oc => oc.IntegrationPattern)
+            .IsRequired()
+            .HasConversion<string>();
+
         builder.Property(oc => oc.ScheduleCron)
             .IsRequired()
             .HasDefaultValue("*/5 * * * *")
@@ -36,9 +48,6 @@ public class OrchestrationConfigConfiguration : IEntityTypeConfiguration<Orchest
         builder.Property(oc => oc.UpdatedAt)
             .IsRequired()
             .HasDefaultValueSql("CURRENT_TIMESTAMP")
-            .ValueGeneratedOnUpdate();
-
-        builder.HasIndex(oc => oc.DataInterfaceId)
-            .IsUnique();
+            .ValueGeneratedOnAddOrUpdate();
     }
 }

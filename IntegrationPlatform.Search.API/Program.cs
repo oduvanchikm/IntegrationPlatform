@@ -1,5 +1,6 @@
-using IntegrationPlatform.Search.API.Interfaces;
+using IntegrationPlatform.Publication.DataAccess;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
+using IntegrationPlatform.Search.API.Interfaces;
 using IntegrationPlatform.Search.API.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -18,8 +19,13 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddPublicationDbContext(
+    builder.Configuration.GetConnectionString("PublicationDbContext"));
+
 builder.Services.AddDbContextFactory<PublicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("PublicationDbContext")));
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("PublicationDbContext"));
+});
 
 builder.Services.AddScoped<ISearchService, SearchService>();
 

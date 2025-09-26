@@ -36,7 +36,7 @@ public class DataInterfaceConfiguration : IEntityTypeConfiguration<DataInterface
         
         builder.HasOne(di => di.OrchestrationConfig)
             .WithOne(oc => oc.DataInterface)
-            .HasForeignKey<OrchestrationConfig>(oc => oc.DataInterfaceId)
+            .HasForeignKey<OrchestrationConfig>(oc => oc.InterfaceSubscriptionId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

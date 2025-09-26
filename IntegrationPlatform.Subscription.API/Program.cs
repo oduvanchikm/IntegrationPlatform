@@ -1,3 +1,4 @@
+using IntegrationPlatform.Subscription.DataAccess;
 using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -18,8 +19,13 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddSubscriptionDbContext(
+    builder.Configuration.GetConnectionString("SubscriptionDbContext"));
+
 builder.Services.AddDbContextFactory<SubscriptionDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("SubscriptionDbContext")));
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("SubscriptionDbContext"));
+});
 
 var app = builder.Build();
 

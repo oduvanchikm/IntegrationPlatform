@@ -1,5 +1,6 @@
 using IntegrationPlatform.Publication.API.Interfaces;
 using IntegrationPlatform.Publication.API.Services;
+using IntegrationPlatform.Publication.DataAccess;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -20,12 +21,24 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddPublicationDbContext(
+    builder.Configuration.GetConnectionString("PublicationDbContext"));
+
 builder.Services.AddDbContextFactory<PublicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("PublicationDbContext")));
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("PublicationDbContext"));
+});
+
 
 builder.Services.AddScoped<IPublicationService, PublicationService>();
 
 var app = builder.Build();
+
+// using (var scope = app.Services.CreateScope())
+// {
+//     var dbContext = scope.ServiceProvider.GetRequiredService<PublicationDbContext>();
+//     dbContext.Database.Migrate();
+// }
 
 app.UseSwagger();
 app.UseSwaggerUI();

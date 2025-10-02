@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: title
+spec:
+  schedule: "*/5 * * * *" 
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: engine
+              image: busybox:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - date; echo Hello!
+          restartPolicy: OnFailure

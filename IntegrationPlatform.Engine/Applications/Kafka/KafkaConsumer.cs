@@ -5,12 +5,17 @@ using Microsoft.Extensions.Configuration;
 
 namespace IntegrationPlatform.Engine.Applications.Kafka;
 
-public class KafkaConsumer(ILogger<KafkaConsumer> logger, IConfiguration configuration) : BackgroundService
+public class KafkaConsumer(ILogger<KafkaConsumer> logger, IConfiguration configuration, KafkaMessageHandler handler)
+    : BackgroundService
 {
+    private readonly ILogger<KafkaConsumer> _logger = logger;
+    private readonly IConfiguration _configuration = configuration;
+    private readonly KafkaMessageHandler _handler = handler;
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("Kafka Consumer is starting.");
-        var kafkaSection = configuration.GetSection("Kafka");
+        _logger.LogInformation("Kafka Consumer is starting.");
+        var kafkaSection = _configuration.GetSection("Kafka");
         var config = new ConsumerConfig
         {
             BootstrapServers = kafkaSection["BootstrapServers"],
@@ -21,21 +26,21 @@ public class KafkaConsumer(ILogger<KafkaConsumer> logger, IConfiguration configu
         using var consumer = new ConsumerBuilder<Ignore, string>(config).Build();
         consumer.Subscribe(kafkaSection["Topic"]);
 
-        logger.LogInformation("Kafka consumer started. Listening topic {Topic}", kafkaSection["Topic"]);
+        _logger.LogInformation("Kafka consumer started. Listening topic {Topic}", kafkaSection["Topic"]);
 
         try
         {
             while (!stoppingToken.IsCancellationRequested)
             {
                 var consumeResult = consumer.Consume(stoppingToken);
-                logger.LogInformation("Message received: {Message}", consumeResult.Message.Value);
-                
-                // todo вот тут по идее будет дергаться контроллер кубера крон джоб
+                _logger.LogInformation("Message received: {Message}", consumeResult.Message.Value);
+
+                await _handler.HandleMessageAsync(consumeResult.Message.Value);
             }
         }
         catch (Exception e)
         {
-            logger.LogError(e, "Kafka consumer failed.");
+            _logger.LogError(e, "Kafka consumer failed.");
             throw;
         }
         finally

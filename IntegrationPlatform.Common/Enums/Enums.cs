@@ -35,6 +35,8 @@ public enum IntegrationPattern
     DatabaseToKafka,
     ApiToDatabase,
     ApiToKafka,
+    ApiToApi,
     KafkaToDatabase,
-    KafkaToApi
+    KafkaToApi,
+    KafkaToKafka
 }

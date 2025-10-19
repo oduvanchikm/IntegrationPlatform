@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace IntegrationPlatform.Publication.DataAccess.DatabaseConnection.Migrations
 {
     [DbContext(typeof(PublicationDbContext))]
-    [Migration("20250926131234_InitialCreate")]
+    [Migration("20251014140436_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

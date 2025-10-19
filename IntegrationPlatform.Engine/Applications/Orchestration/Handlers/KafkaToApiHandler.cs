@@ -6,8 +6,7 @@ public class KafkaToApiHandler(ILogger logger)
 {
     private readonly ILogger _logger = logger;
 
-    public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface,
-        OrchestrationConfigModel config)
+    public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface)
     {
         _logger.LogInformation("KafkaToApiHandler.ExecuteAsync");
     }

@@ -19,6 +19,8 @@
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+    networks:
+      - app-network
   
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
@@ -28,6 +30,8 @@
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2189:2181"
+    networks:
+      - app-network
   
   kafka:
     image: confluentinc/cp-kafka:7.5.0
@@ -36,12 +40,15 @@
       - "9100:9092"
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: ${ZOOKEEPER_CONNECT}
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     depends_on:
       - zookeeper
+    networks:
+      - app-network
   
   connect:
     image: debezium/connect:2.4
@@ -49,7 +56,7 @@
     ports:
       - "8083:8083"
     environment:
-      BOOTSTRAP_SERVERS: ${KAFKA_BROKER}
+      BOOTSTRAP_SERVERS: kafka:9092
       GROUP_ID: 1
       CONFIG_STORAGE_TOPIC: debezium_connect_configs
       OFFSET_STORAGE_TOPIC: debezium_connect_offsets
@@ -61,16 +68,100 @@
     depends_on:
       - kafka
       - postgres
-        
+    networks:
+      - app-network
+  
+  zookeeper2:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper2
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2190:2181"
+    networks:
+      - app-network
+
+  kafka2:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka2
+    ports:
+      - "9200:9092"
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper2:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper2
+    networks:
+      - app-network
+  
   kafdrop:
     image: obsidiandynamics/kafdrop:latest
     container_name: kafdrop
     ports:
       - "9000:9000"
     environment:
-      KAFKA_BROKERCONNECT: kafka:9092
+      KAFKA_BROKERCONNECT: "kafka:9092"
     depends_on:
       - kafka
+    networks:
+      - app-network
+  
+  kafdrop2:
+    image: obsidiandynamics/kafdrop:latest
+    container_name: kafdrop2
+    ports:
+      - "9001:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka2:9092"
+    depends_on:
+      - kafka2
+    networks:
+      - app-network
+
+  zookeeper3:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper3
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2191:2181"
+    networks:
+      - app-network
+
+  kafka33:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka33
+    ports:
+      - "9300:9092"
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper3:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper3
+    networks:
+      - app-network
+  
+  kafdrop3:
+    image: obsidiandynamics/kafdrop:latest
+    container_name: kafdrop3
+    ports:
+      - "9002:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka3:9092"
+    depends_on:
+      - kafka33
+    networks:
+      - app-network
 
   publication-api:
     build:
@@ -80,10 +171,14 @@
     environment:
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__PublicationDbContext=Host=postgres;Port=5432;Database=integration_platform;Username=admin;Password=password;Search Path=publication
+      - Kafka__BootstrapServers=kafka2:9092
     depends_on:
       - postgres
+      - kafka2
     ports:
       - "5001:8080"
+    networks:
+      - app-network
   
   search-api:
     build:
@@ -97,6 +192,8 @@
       - postgres
     ports:
       - "5002:8080"
+    networks:
+      - app-network
 
   subscription-api:
     build:
@@ -110,10 +207,12 @@
       - postgres
     ports:
       - "5003:8080"
+    networks:
+      - app-network
 
   frontend:
     build:
-      context: ./Frontend
+      context: ./integration-platform-ui
       dockerfile: Dockerfile
     container_name: integration-frontend
     ports:
@@ -122,6 +221,35 @@
       - publication-api
       - search-api
       - subscription-api
+    networks:
+      - app-network
+  
+  engine:
+    build:
+      context: .
+      dockerfile: IntegrationPlatform.Engine/Dockerfile
+    container_name: integration-engine
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__PublicationDbContext=Host=postgres;Port=5432;Database=integration_platform;Username=admin;Password=password;Search Path=publication
+      - ConnectionStrings__SubscriptionDbContext=Host=postgres;Port=5432;Database=integration_platform;Username=admin;Password=password;Search Path=subscription
+      - Kafka__BootstrapServers=kafka:9092
+      - Kafka__GroupId=engine-consumer-group
+      - Kafka__Topic=debezium.publication.orchestration_configs
+      - KafkaSource__BootstrapServers=kafka2:9092
+      - KafkaSource__BootstrapServers=kafka3:9092
+    depends_on:
+      - postgres
+      - kafka
+      - kafka2
+      - kafka33
+      - connect
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   postgres_data:

@@ -5,12 +5,12 @@ using Microsoft.Extensions.Configuration;
 
 namespace IntegrationPlatform.Engine.Applications.Kafka;
 
-public class KafkaConsumer(ILogger<KafkaConsumer> logger, IConfiguration configuration, KafkaMessageHandler handler)
+public class KafkaConsumer(ILogger<KafkaConsumer> logger, IConfiguration configuration, IServiceProvider serviceProvider)
     : BackgroundService
 {
     private readonly ILogger<KafkaConsumer> _logger = logger;
     private readonly IConfiguration _configuration = configuration;
-    private readonly KafkaMessageHandler _handler = handler;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -32,10 +32,30 @@ public class KafkaConsumer(ILogger<KafkaConsumer> logger, IConfiguration configu
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                var consumeResult = consumer.Consume(stoppingToken);
-                _logger.LogInformation("Message received: {Message}", consumeResult.Message.Value);
+                try
+                {
+                    var consumeResult = consumer.Consume(stoppingToken);
+                    
+                    if (consumeResult?.Message?.Value == null)
+                        continue;
 
-                await _handler.HandleMessageAsync(consumeResult.Message.Value);
+                    _logger.LogInformation("Message received from offset: {Offset}", consumeResult.Offset);
+
+                    using var scope = _serviceProvider.CreateScope();
+                    var handler = scope.ServiceProvider.GetRequiredService<KafkaMessageHandler>();
+                    
+                    await handler.HandleMessageAsync(consumeResult.Message.Value);
+                    
+                    consumer.StoreOffset(consumeResult);
+                }
+                catch (ConsumeException ex)
+                {
+                    _logger.LogError(ex, "Error consuming message: {Error}", ex.Error.Reason);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Unexpected error processing message");
+                }
             }
         }
         catch (Exception e)

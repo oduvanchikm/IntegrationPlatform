@@ -62,17 +62,17 @@ public abstract class OrchestrationService(
                 case "KafkaToApi":
                     _logger.LogInformation("KafkaToApi");
                     await new KafkaToApiHandler(_logger)
-                        .ExecuteAsync(publicationInterface, subscriptionInterface, config);
+                        .ExecuteAsync(publicationInterface, subscriptionInterface);
                     break;
                 case "KafkaToKafka":
                     _logger.LogInformation("KafkaToKafka");
                     await new KafkaToKafkaHandler(_logger)
-                        .ExecuteAsync(publicationInterface, subscriptionInterface, config);
+                        .ExecuteAsync(publicationInterface, subscriptionInterface);
                     break;
                 case "KafkaToDatabase":
                     _logger.LogInformation("KafkaToDatabase");
                     await new KafkaToDatabaseHandler(_logger)
-                        .ExecuteAsync(publicationInterface, subscriptionInterface, config);
+                        .ExecuteAsync(publicationInterface, subscriptionInterface);
                     break;
                 case "DatabaseToApi":
                     _logger.LogInformation("DatabaseToApi");

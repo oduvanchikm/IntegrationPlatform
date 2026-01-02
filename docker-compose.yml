@@ -1,6 +1,6 @@
 ﻿services:
   postgres:
-    image: postgres:15
+    image: debezium/postgres:15
     container_name: integration-platform-postgres
     environment:
       POSTGRES_USER: admin

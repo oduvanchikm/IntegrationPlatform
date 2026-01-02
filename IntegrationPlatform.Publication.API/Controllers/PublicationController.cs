@@ -10,16 +10,14 @@ public class PublicationController(IPublicationService publicationService) : Con
 {
     private readonly IPublicationService _publicationService = publicationService;
 
-    [HttpPost("interfaces")]
+    [HttpPost("interfaces")] 
     public async Task<IActionResult> PublishInterface([FromBody] InterfacePublishRequest request)
     {
         var result = await _publicationService.PublishInterfaceAsync(request);
 
         if (!result.Success)
         {
-            return string.IsNullOrEmpty(result.Error)
-                ? BadRequest(new { Success = false, Error = "Unknown error" })
-                : BadRequest(new { Success = false, Error = result.Error });
+            return BadRequest(new { Success = false, Error = result.Error });
         }
 
         return Ok(new

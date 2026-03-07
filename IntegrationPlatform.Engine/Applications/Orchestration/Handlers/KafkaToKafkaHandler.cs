@@ -150,7 +150,7 @@ public class KafkaToKafkaHandler(ILogger logger)
             return;
         }
 
-        await SendToTargetKafkaAsync(publicationInterface, message);
+        await SendToTargetKafkaAsync(subscriptionInterface, message);
 
         _logger.LogInformation("KafkaToKafkaHandler.ExecuteAsync");
     }

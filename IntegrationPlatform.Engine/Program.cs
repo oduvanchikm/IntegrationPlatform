@@ -1,6 +1,6 @@
-using IntegrationPlatform.Engine;
 using IntegrationPlatform.Engine.Applications.Kafka;
 using IntegrationPlatform.Engine.Applications.Orchestration;
+using IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 using IntegrationPlatform.Publication.DataAccess;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using IntegrationPlatform.Subscription.DataAccess;
@@ -27,6 +27,11 @@ builder.Services.AddDbContextFactory<SubscriptionDbContext>(options =>
 
 builder.Services.AddScoped<OrchestrationService>();
 builder.Services.AddScoped<KafkaMessageHandler>();
+
+builder.Services.AddScoped<ApiToKafkaHandler>();
+builder.Services.AddScoped<KafkaToApiHandler>();
+builder.Services.AddScoped<KafkaToKafkaHandler>();
+builder.Services.AddScoped<KafkaToDatabaseHandler>();
 
 builder.Services.AddHostedService<KafkaConsumer>();
 

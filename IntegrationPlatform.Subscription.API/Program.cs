@@ -1,3 +1,5 @@
+using IntegrationPlatform.Subscription.API.Interfaces;
+using IntegrationPlatform.Subscription.API.Services;
 using IntegrationPlatform.Subscription.DataAccess;
 using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +28,8 @@ builder.Services.AddDbContextFactory<SubscriptionDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("SubscriptionDbContext"));
 });
+
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 
 var app = builder.Build();
 

@@ -6,14 +6,25 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IntegrationPlatform.Engine.Applications.Orchestration;
 
-public abstract class OrchestrationService(
-    ILogger<OrchestrationService> logger,
-    IDbContextFactory<PublicationDbContext> publicationDbContext,
-    IDbContextFactory<SubscriptionDbContext> subscriptionDbContext)
+public class OrchestrationService
 {
-    private readonly ILogger<OrchestrationService> _logger = logger;
-    private readonly IDbContextFactory<PublicationDbContext> _publicationDbContext = publicationDbContext;
-    private readonly IDbContextFactory<SubscriptionDbContext> _subscriptionDbContext = subscriptionDbContext;
+    private readonly ILogger<OrchestrationService> _logger;
+    private readonly IDbContextFactory<PublicationDbContext> _publicationDbContext;
+    private readonly IDbContextFactory<SubscriptionDbContext> _subscriptionDbContext;
+    private readonly IServiceProvider _serviceProvider;
+    
+    public OrchestrationService(
+        ILogger<OrchestrationService> logger,
+        IDbContextFactory<PublicationDbContext> publicationDbContext,
+        IDbContextFactory<SubscriptionDbContext> subscriptionDbContext,
+        IServiceProvider serviceProvider) 
+    {
+        _logger = logger;
+        _publicationDbContext = publicationDbContext;
+        _subscriptionDbContext = subscriptionDbContext;
+        _serviceProvider = serviceProvider;
+    }
+
 
     public async Task HandleNewOrchestration(OrchestrationConfigModel config)
     {
@@ -71,8 +82,8 @@ public abstract class OrchestrationService(
                     break;
                 case "KafkaToDatabase":
                     _logger.LogInformation("KafkaToDatabase");
-                    await new KafkaToDatabaseHandler(_logger)
-                        .ExecuteAsync(publicationInterface, subscriptionInterface);
+                    var kafkaToApiHandler = ActivatorUtilities.CreateInstance<KafkaToApiHandler>(_serviceProvider);
+                    await kafkaToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
                     break;
                 case "DatabaseToApi":
                     _logger.LogInformation("DatabaseToApi");

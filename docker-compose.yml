@@ -143,7 +143,7 @@
       KAFKA_BROKER_ID: 3
       KAFKA_ZOOKEEPER_CONNECT: zookeeper3:2181
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka33:9092
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     depends_on:
@@ -157,7 +157,7 @@
     ports:
       - "9002:9000"
     environment:
-      KAFKA_BROKERCONNECT: "kafka3:9092"
+      KAFKA_BROKERCONNECT: "kafka33:9092"
     depends_on:
       - kafka33
     networks:
@@ -210,19 +210,19 @@
     networks:
       - app-network
 
-  frontend:
-    build:
-      context: ./integration-platform-ui
-      dockerfile: Dockerfile
-    container_name: integration-frontend
-    ports:
-      - "8080:80"
-    depends_on:
-      - publication-api
-      - search-api
-      - subscription-api
-    networks:
-      - app-network
+#  frontend:
+#    build:
+#      context: ./integration-platform-ui
+#      dockerfile: Dockerfile
+#    container_name: integration-frontend
+#    ports:
+#      - "8080:80"
+#    depends_on:
+#      - publication-api
+#      - search-api
+#      - subscription-api
+#    networks:
+#      - app-network
   
   engine:
     build:

@@ -121,6 +121,4 @@ public class PublicationService(
             return new PublicationResult { Success = false, Error = ex.Message };
         }
     }
-    
-    
 }

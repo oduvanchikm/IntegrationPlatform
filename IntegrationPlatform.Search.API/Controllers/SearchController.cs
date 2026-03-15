@@ -36,8 +36,18 @@ public class SearchController(ISearchService searchService) : ControllerBase
         [FromQuery] string? interfaceName,
         [FromQuery] InterfaceType? interfaceType)
     {
-        var results = await _searchService.SearchInterfacesAdvanced(productName, 
+        var results = await _searchService.SearchInterfacesAdvanced(productName,
             interfaceName, interfaceType);
         return Ok(results);
+    }
+
+    [HttpGet("by-id/{id}")]
+    public async Task<IActionResult> GetInterfaceById(int id)
+    {
+        var result = await _searchService.GetInterfaceByIdAsync(id);
+        if (result == null)
+            return NotFound(new { Success = false, Error = $"Interface with ID {id} not found" });
+
+        return Ok(result);
     }
 }

@@ -29,7 +29,7 @@ echo -e "${GREEN}✓ Source Interface ID: $SOURCE_ID${NC}"
 
 # 2. Публикация Target Kafka интерфейса
 echo -e "${BLUE}2. Публикация Target Kafka интерфейса...${NC}"
-TARGET_RESPONSE=$(curl -s -X POST http://localhost:5001/api/Publication/interfaces \
+TARGET_RESPONSE=$(curl -s -X POST http://localhost:5003/api/Interface \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Target Kafka Interface",
@@ -99,8 +99,16 @@ else
     echo -e "${GREEN}✓ Debezium коннектор создан${NC}"
 fi
 
+# 5. Проверка созданных интерфейсов
+echo -e "${BLUE}5. Проверка созданных интерфейсов...${NC}"
+echo -e "${BLUE}   Source интерфейс (через Search API):${NC}"
+curl -s "http://localhost:5002/api/Search/interfaces/by-id/$SOURCE_ID" | jq .
+
+echo -e "${BLUE}   Consumer интерфейс (через Subscription API):${NC}"
+curl -s "http://localhost:5003/api/Interface/$CONSUMER_ID" | jq .
+
 echo -e "\n${GREEN}✅ Интеграция настроена!${NC}"
 echo "Теперь вы можете:"
 echo "1. Запустить TestProducer для отправки сообщений в source-topic"
 echo "2. Запустить TestConsumer для получения сообщений из target-topic"
-echo "3. Наблюдать за логами Engine, чтобы увидеть обработку"
+echo "3. Наблюдать за логами Engine: docker logs -f integration-engine"

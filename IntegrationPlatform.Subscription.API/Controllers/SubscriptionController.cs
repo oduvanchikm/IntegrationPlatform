@@ -1,3 +1,5 @@
+using IntegrationPlatform.Common.Enums;
+using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Subscription.API.DTO;
 using IntegrationPlatform.Subscription.API.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -15,14 +17,15 @@ public class SubscriptionController(ISubscriptionService subscriptionService, IL
         try
         {
             var result = await subscriptionService.CreateOrchestrationConfigAsync(request);
-            
+
             if (!result.Success)
                 return BadRequest(new { result.Success, result.Error });
 
-            return Ok(new { 
-                result.Success, 
+            return Ok(new
+            {
+                result.Success,
                 result.OrchestrationConfigId,
-                Message = "Connection created. Engine will automatically start integration via CDC." 
+                Message = "Connection created. Engine will automatically start integration via CDC."
             });
         }
         catch (Exception ex)

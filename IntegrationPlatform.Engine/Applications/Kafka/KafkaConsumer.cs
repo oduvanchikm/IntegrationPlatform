@@ -2,70 +2,101 @@ using Confluent.Kafka;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
+using IntegrationPlatform.Engine.Applications.Interfaces;
 
 namespace IntegrationPlatform.Engine.Applications.Kafka;
 
-public class KafkaConsumer(ILogger<KafkaConsumer> logger, IConfiguration configuration, IServiceProvider serviceProvider)
+public class KafkaConsumer(
+    ILogger<KafkaConsumer> logger,
+    IConfiguration configuration,
+    IServiceProvider serviceProvider)
     : BackgroundService
 {
-    private readonly ILogger<KafkaConsumer> _logger = logger;
-    private readonly IConfiguration _configuration = configuration;
-    private readonly IServiceProvider _serviceProvider = serviceProvider;
+    private readonly int _reconnectDelayMs = 5000;
+    private readonly int _maxReconnectAttempts = 10;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Kafka Consumer is starting.");
-        var kafkaSection = _configuration.GetSection("Kafka");
-        var config = new ConsumerConfig
+        logger.LogInformation("Kafka Consumer is starting.");
+
+        var bootstrapServers = configuration["Kafka:BootstrapServers"];
+        var topic = configuration["Kafka:Topic"];
+        var groupId = configuration["Kafka:GroupId"];
+
+        int attempt = 0;
+
+        while (!stoppingToken.IsCancellationRequested && attempt < _maxReconnectAttempts)
         {
-            BootstrapServers = kafkaSection["BootstrapServers"],
-            GroupId = kafkaSection["GroupId"],
-            AutoOffsetReset = AutoOffsetReset.Earliest
-        };
-
-        using var consumer = new ConsumerBuilder<Ignore, string>(config).Build();
-        consumer.Subscribe(kafkaSection["Topic"]);
-
-        _logger.LogInformation("Kafka consumer started. Listening topic {Topic}", kafkaSection["Topic"]);
-
-        try
-        {
-            while (!stoppingToken.IsCancellationRequested)
+            try
             {
-                try
+                var config = new ConsumerConfig
                 {
-                    var consumeResult = consumer.Consume(stoppingToken);
-                    
-                    if (consumeResult?.Message?.Value == null)
-                        continue;
+                    BootstrapServers = bootstrapServers,
+                    GroupId = groupId,
+                    AutoOffsetReset = AutoOffsetReset.Earliest,
+                    EnableAutoCommit = false,
+                    SessionTimeoutMs = 6000,
+                    MaxPollIntervalMs = 300000,
+                    SocketTimeoutMs = 60000,
+                    ReconnectBackoffMs = 1000,
+                    ReconnectBackoffMaxMs = 10000
+                };
 
-                    _logger.LogInformation("Message received from offset: {Offset}", consumeResult.Offset);
+                using var consumer = new ConsumerBuilder<Ignore, string>(config).Build();
+                consumer.Subscribe(topic);
 
-                    using var scope = _serviceProvider.CreateScope();
-                    var handler = scope.ServiceProvider.GetRequiredService<KafkaMessageHandler>();
-                    
-                    await handler.HandleMessageAsync(consumeResult.Message.Value);
-                    
-                    consumer.StoreOffset(consumeResult);
-                }
-                catch (ConsumeException ex)
+                logger.LogInformation("Kafka consumer started. Listening topic {Topic} on {BootstrapServers}",
+                    topic, bootstrapServers);
+
+                attempt = 0; // Сброс счетчика при успешном подключении
+
+                while (!stoppingToken.IsCancellationRequested)
                 {
-                    _logger.LogError(ex, "Error consuming message: {Error}", ex.Error.Reason);
+                    try
+                    {
+                        var consumeResult = consumer.Consume(TimeSpan.FromSeconds(1));
+
+                        if (consumeResult?.Message?.Value == null)
+                            continue;
+
+                        logger.LogInformation("Message received from topic {Topic} at offset {Offset}",
+                            consumeResult.Topic, consumeResult.Offset);
+
+                        using var scope = serviceProvider.CreateScope();
+                        var handler = scope.ServiceProvider.GetRequiredService<KafkaMessageHandler>();
+
+                        await handler.HandleMessageAsync(consumeResult.Message.Value);
+
+                        consumer.Commit(consumeResult);
+                    }
+                    catch (ConsumeException ex)
+                    {
+                        logger.LogError(ex, "Error consuming message: {Error}", ex.Error.Reason);
+                        await Task.Delay(1000, stoppingToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Unexpected error processing message");
+                        await Task.Delay(1000, stoppingToken);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Unexpected error processing message");
-                }
+
+                consumer.Close();
+            }
+            catch (Exception ex)
+            {
+                attempt++;
+                logger.LogWarning(ex,
+                    "Failed to connect to Kafka (attempt {Attempt}/{MaxAttempts}). Retrying in {Delay}ms...",
+                    attempt, _maxReconnectAttempts, _reconnectDelayMs);
+
+                await Task.Delay(_reconnectDelayMs, stoppingToken);
             }
         }
-        catch (Exception e)
+
+        if (attempt >= _maxReconnectAttempts)
         {
-            _logger.LogError(e, "Kafka consumer failed.");
-            throw;
-        }
-        finally
-        {
-            consumer.Close();
+            logger.LogError("Failed to connect to Kafka after {MaxAttempts} attempts", _maxReconnectAttempts);
         }
     }
 }

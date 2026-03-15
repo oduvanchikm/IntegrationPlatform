@@ -3,9 +3,16 @@ using IntegrationPlatform.Common.Models;
 
 namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 
-public class KafkaToKafkaHandler(ILogger logger)
+public class KafkaToKafkaHandler
 {
-    private readonly ILogger _logger = logger;
+    private readonly ILogger _logger;
+    private readonly IServiceProvider _serviceProvider;
+
+    public KafkaToKafkaHandler(ILogger<KafkaToKafkaHandler> logger, IServiceProvider serviceProvider)
+    {
+        _logger = logger;
+        _serviceProvider = serviceProvider;
+    }
 
     private async Task<List<string>> ConsumerFromSourceKafkaAsync(DataInterface dataInterface, int batchSize = 100)
     {
@@ -140,18 +147,58 @@ public class KafkaToKafkaHandler(ILogger logger)
 
     public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface)
     {
-        _logger.LogInformation("KafkaToKafkaHandler.ExecuteAsync");
-
-        var message = await ConsumerFromSourceKafkaAsync(publicationInterface, batchSize: 50);
-
-        if (!message.Any())
+        _logger.LogInformation("========== KAFKA TO KAFKA HANDLER EXECUTE START ==========");
+        
+        var sourceKafka = publicationInterface as KafkaInterface;
+        var targetKafka = subscriptionInterface as KafkaInterface;
+        
+        _logger.LogInformation("Publication interface ID: {Id}, Name: {Name}", 
+            publicationInterface.Id, publicationInterface.Name);
+        _logger.LogInformation("Subscription interface ID: {Id}, Name: {Name}", 
+            subscriptionInterface.Id, subscriptionInterface.Name);
+        
+        if (sourceKafka == null)
         {
-            _logger.LogError("KafkaToKafkaHandler.ExecuteAsync: No message found");
+            _logger.LogError("Publication interface is not KafkaInterface! Actual type: {Type}", 
+                publicationInterface.GetType().Name);
             return;
         }
+        
+        if (targetKafka == null)
+        {
+            _logger.LogError("Subscription interface is not KafkaInterface! Actual type: {Type}", 
+                subscriptionInterface.GetType().Name);
+            return;
+        }
+        
+        _logger.LogInformation("Source Kafka: BootstrapServers={BS}, Topic={Topic}", 
+            sourceKafka.BootstrapServers, sourceKafka.TopicName);
+        _logger.LogInformation("Target Kafka: BootstrapServers={BS}, Topic={Topic}", 
+            targetKafka.BootstrapServers, targetKafka.TopicName);
 
-        await SendToTargetKafkaAsync(subscriptionInterface, message);
+        try
+        {
+            _logger.LogInformation("Attempting to consume from source topic...");
+            var messages = await ConsumerFromSourceKafkaAsync(publicationInterface, batchSize: 50);
+            
+            _logger.LogInformation("Consumed {Count} messages from source topic", messages.Count);
 
-        _logger.LogInformation("KafkaToKafkaHandler.ExecuteAsync");
+            if (!messages.Any())
+            {
+                _logger.LogWarning("No messages found in source topic. Will retry later.");
+                return;
+            }
+
+            _logger.LogInformation("Attempting to send {Count} messages to target topic", messages.Count);
+            await SendToTargetKafkaAsync(subscriptionInterface, messages);
+            
+            _logger.LogInformation("Successfully processed {Count} messages", messages.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in KafkaToKafkaHandler.ExecuteAsync: {Message}", ex.Message);
+        }
+        
+        _logger.LogInformation("========== KAFKA TO KAFKA HANDLER EXECUTE END ==========");
     }
 }

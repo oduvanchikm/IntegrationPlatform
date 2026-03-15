@@ -8,7 +8,7 @@ BLUE='\033[0;34m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-# 1. Публикация Source Kafka интерфейса
+# 1. Публикация Source Kafka интерфейса через Publication API
 echo -e "${BLUE}1. Публикация Source Kafka интерфейса...${NC}"
 SOURCE_RESPONSE=$(curl -s -X POST http://localhost:5001/api/Publication/interfaces \
   -H "Content-Type: application/json" \
@@ -27,43 +27,56 @@ SOURCE_RESPONSE=$(curl -s -X POST http://localhost:5001/api/Publication/interfac
 SOURCE_ID=$(echo $SOURCE_RESPONSE | jq -r '.interfaceId')
 echo -e "${GREEN}✓ Source Interface ID: $SOURCE_ID${NC}"
 
-# 2. Публикация Target Kafka интерфейса
-echo -e "${BLUE}2. Публикация Target Kafka интерфейса...${NC}"
-TARGET_RESPONSE=$(curl -s -X POST http://localhost:5003/api/Interface \
+# 2. Создание Consumer Kafka интерфейса через Subscription API
+echo -e "${BLUE}2. Создание Consumer Kafka интерфейса...${NC}"
+CONSUMER_RESPONSE=$(curl -s -X POST http://localhost:5003/api/Interface \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Target Kafka Interface",
     "productName": "KafkaTargetProduct",
     "interfaceType": 1,
     "description": "Target Kafka for testing",
-    "productType": 0,
     "bootstrapServers": "kafka3:9092",
     "topicName": "target-topic",
     "username": "",
     "password": ""
   }')
 
-TARGET_ID=$(echo $TARGET_RESPONSE | jq -r '.interfaceId')
-echo -e "${GREEN}✓ Target Interface ID: $TARGET_ID${NC}"
+CONSUMER_ID=$(echo $CONSUMER_RESPONSE | jq -r '.interfaceId')
+echo -e "${GREEN}✓ Consumer Interface ID: $CONSUMER_ID${NC}"
 
-# 3. Создание интеграции
+# 3. Создание интеграции - ИСПРАВЛЕНО: используем HERE document для JSON
 echo -e "${BLUE}3. Создание интеграции Kafka → Kafka...${NC}"
+
+# Создаем JSON с помощью printf (без экранирования)
+JSON_DATA=$(printf '{
+    "publicationInterfaceId": %d,
+    "subscriptionInterfaceId": %d,
+    "integrationPattern": 8,
+    "scheduleCron": "*/1 * * * *",
+    "maxRetryAttempts": 3,
+    "retryDelaySeconds": 30,
+    "executionTimeoutSeconds": 300
+}' "$SOURCE_ID" "$CONSUMER_ID")
+
+echo "Sending JSON: $JSON_DATA"
+
 CONNECT_RESPONSE=$(curl -s -X POST http://localhost:5003/api/Subscription/connect \
   -H "Content-Type: application/json" \
-  -d "{
-    \"subscriptionInterfaceId\": $TARGET_ID,
-    \"publicationInterfaceId\": $SOURCE_ID,
-    \"integrationPattern\": \"8\",
-    \"scheduleCron\": \"*/1 * * * *\",
-    \"maxRetryAttempts\": 3,
-    \"retryDelaySeconds\": 30,
-    \"executionTimeoutSeconds\": 300
-  }")
+  -d "$JSON_DATA")
 
-CONFIG_ID=$(echo $CONNECT_RESPONSE | jq -r '.orchestrationConfigId')
-echo -e "${GREEN}✓ Orchestration Config ID: $CONFIG_ID${NC}"
+echo "Connect response: $CONNECT_RESPONSE"
 
-# 4. Проверка создания коннектора Debezium
+# Проверяем ответ
+if echo "$CONNECT_RESPONSE" | grep -q "orchestrationConfigId"; then
+    CONFIG_ID=$(echo "$CONNECT_RESPONSE" | jq -r '.orchestrationConfigId')
+    echo -e "${GREEN}✓ Orchestration Config ID: $CONFIG_ID${NC}"
+else
+    echo -e "${RED}✗ Failed to get Orchestration Config ID${NC}"
+    echo "Full response: $CONNECT_RESPONSE"
+fi
+
+# 4. Проверка Debezium коннектора
 echo -e "${BLUE}4. Проверка Debezium коннектора...${NC}"
 CONNECTOR_STATUS=$(curl -s http://localhost:8083/connectors/subscription-orchestration-connector/status 2>/dev/null)
 if [ $? -eq 0 ]; then
@@ -107,8 +120,37 @@ curl -s "http://localhost:5002/api/Search/interfaces/by-id/$SOURCE_ID" | jq .
 echo -e "${BLUE}   Consumer интерфейс (через Subscription API):${NC}"
 curl -s "http://localhost:5003/api/Interface/$CONSUMER_ID" | jq .
 
-echo -e "\n${GREEN}✅ Интеграция настроена!${NC}"
-echo "Теперь вы можете:"
-echo "1. Запустить TestProducer для отправки сообщений в source-topic"
-echo "2. Запустить TestConsumer для получения сообщений из target-topic"
-echo "3. Наблюдать за логами Engine: docker logs -f integration-engine"
+# 6. Проверка созданных подключений
+echo -e "${BLUE}6. Проверка созданных подключений...${NC}"
+curl -s "http://localhost:5003/api/Subscription/connections" | jq .
+
+# 7. ТЕСТИРОВАНИЕ ПЕРЕСЫЛКИ СООБЩЕНИЙ
+echo -e "${BLUE}7. Тестирование пересылки сообщений...${NC}"
+
+# Отправляем тестовое сообщение в source-topic
+echo -e "${YELLOW}   Отправка тестового сообщения в source-topic...${NC}"
+docker exec kafka bash -c "echo 'Тестовое сообщение $(date)' | kafka-console-producer --broker-list kafka:9092 --topic source-topic 2>/dev/null"
+echo -e "${GREEN}   ✓ Сообщение отправлено${NC}"
+
+# Ждем 5 секунд для обработки Engine
+echo -e "${YELLOW}   Ожидание обработки Engine (5 сек)...${NC}"
+sleep 5
+
+# Читаем последнее сообщение из target-topic
+echo -e "${YELLOW}   Чтение сообщения из target-topic:${NC}"
+docker exec kafka33 kafka-console-consumer --bootstrap-server kafka33:9092 --topic target-topic --from-beginning --max-messages 1 --timeout-ms 5000 2>/dev/null || echo "   ⚠ Нет сообщений в target-topic"
+
+# 8. Показываем логи Engine
+echo -e "${BLUE}8. Последние логи Engine:${NC}"
+docker logs --tail 10 integration-engine
+
+echo -e "\n${GREEN}✅ Интеграция настроена и протестирована!${NC}"
+echo ""
+echo "Для отправки сообщений вручную:"
+echo "  docker exec -it kafka kafka-console-producer --broker-list kafka:9092 --topic source-topic"
+echo ""
+echo "Для просмотра сообщений:"
+echo "  docker exec -it kafka33 kafka-console-consumer --bootstrap-server kafka33:9092 --topic target-topic --from-beginning"
+echo ""
+echo "Для наблюдения за логами Engine:"
+echo "  docker logs -f integration-engine"

@@ -1,6 +1,7 @@
 using IntegrationPlatform.Common.Enums;
 using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
+using IntegrationPlatform.Subscription.API.DTO;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,71 +9,60 @@ namespace IntegrationPlatform.Subscription.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class InterfaceController
+public class InterfaceController(SubscriptionDbContext context, ILogger<InterfaceController> logger)
+    : ControllerBase
 {
-    private readonly SubscriptionDbContext _context;
-    private readonly ILogger<InterfaceController> _logger;
-
-    public InterfaceController(SubscriptionDbContext context, ILogger<InterfaceController> logger)
-    {
-        _context = context;
-        _logger = logger;
-    }
-    
     [HttpPost]
-    public async Task<IActionResult> CreateConsumerInterface([FromBody] dynamic request)
+    public async Task<IActionResult> CreateConsumerInterface([FromBody] CreateConsumerInterfaceRequest request)
     {
         try
         {
-            _logger.LogInformation("Creating consumer interface");
+            logger.LogInformation("Received consumer interface request: {@Request}", request);
 
-            // Просто берем значения из JSON
-            string name = request.GetProperty("name").GetString();
-            string productName = request.GetProperty("productName").GetString();
-            int interfaceTypeValue = request.GetProperty("interfaceType").GetInt32();
-            var interfaceType = (InterfaceType)interfaceTypeValue;
-
-            // Находим или создаем продукт
-            var product = await _context.Products
-                .FirstOrDefaultAsync(p => p.NameProduct == productName);
-            
-            if (product == null)
+            // Базовая проверка
+            if (string.IsNullOrEmpty(request.ProductName))
             {
-                product = new Product
-                {
-                    NameProduct = productName,
-                    ProductType = ProductType.Consumer
-                };
-                _context.Products.Add(product);
-                await _context.SaveChangesAsync();
+                logger.LogWarning("ProductName is required");
+                return BadRequest(new { Success = false, Error = "ProductName is required" });
             }
 
-            // Создаем интерфейс по типу
-            DataInterface newInterface = interfaceType switch
+            if (string.IsNullOrEmpty(request.Name))
             {
-                InterfaceType.Kafka => new KafkaInterface
+                logger.LogWarning("Interface Name is required");
+                return BadRequest(new { Success = false, Error = "Interface Name is required" });
+            }
+
+            logger.LogDebug("Looking for product: {ProductName}", request.ProductName);
+            var product = await context.Products
+                .FirstOrDefaultAsync(p => p.NameProduct == request.ProductName);
+
+            if (product == null)
+            {
+                logger.LogInformation("Creating new consumer product: {ProductName}", request.ProductName);
+                product = new Product
                 {
-                    Name = name,
-                    Description = request.TryGetProperty("description", out var d) ? d.GetString() : "",
-                    BootstrapServers = request.TryGetProperty("bootstrapServers", out var bs) ? bs.GetString() : "",
-                    TopicName = request.TryGetProperty("topicName", out var tn) ? tn.GetString() : "",
-                    Username = request.TryGetProperty("username", out var u) ? u.GetString() : "",
-                    Password = request.TryGetProperty("password", out var p) ? p.GetString() : "",
-                    ProductId = product.Id,
-                    Status = ConnectionStatus.Active,
-                    InterfaceType = InterfaceType.Kafka
-                },
-                
+                    NameProduct = request.ProductName,
+                    ProductType = ProductType.Consumer
+                };
+                context.Products.Add(product);
+                await context.SaveChangesAsync();
+                logger.LogDebug("Created product with ID: {ProductId}", product.Id);
+            }
+
+            logger.LogDebug("Creating consumer interface of type: {InterfaceType}", request.InterfaceType);
+
+            DataInterface newInterface = request.InterfaceType switch
+            {
                 InterfaceType.Api => new ApiInterface
                 {
-                    Name = name,
-                    Description = request.TryGetProperty("description", out var d) ? d.GetString() : "",
-                    Host = request.TryGetProperty("host", out var h) ? h.GetString() : "",
-                    Port = request.TryGetProperty("port", out var p) ? p.GetString() : "",
-                    Endpoint = request.TryGetProperty("endpoint", out var e) ? e.GetString() : "",
-                    Username = request.TryGetProperty("username", out var u) ? u.GetString() : "",
-                    Password = request.TryGetProperty("password", out var pw) ? pw.GetString() : "",
-                    Token = request.TryGetProperty("token", out var t) ? t.GetString() : "",
+                    Name = request.Name,
+                    Description = request.Description ?? string.Empty,
+                    Host = request.Host ?? string.Empty,
+                    Port = request.Port ?? string.Empty,
+                    Endpoint = request.Endpoint ?? string.Empty,
+                    Username = request.Username ?? string.Empty,
+                    Password = request.Password ?? string.Empty,
+                    Token = request.Token ?? string.Empty,
                     ProductId = product.Id,
                     Status = ConnectionStatus.Active,
                     InterfaceType = InterfaceType.Api
@@ -80,28 +70,45 @@ public class InterfaceController
                 
                 InterfaceType.Db => new DatabaseInterface
                 {
-                    Name = name,
-                    Description = request.TryGetProperty("description", out var d) ? d.GetString() : "",
-                    Host = request.TryGetProperty("host", out var h) ? h.GetString() : "",
-                    Port = request.TryGetProperty("port", out var p) ? p.GetString() : "",
-                    Username = request.TryGetProperty("username", out var u) ? u.GetString() : "",
-                    Password = request.TryGetProperty("password", out var pw) ? pw.GetString() : "",
-                    DatabaseName = request.TryGetProperty("databaseName", out var db) ? db.GetString() : "",
-                    Scheme = request.TryGetProperty("scheme", out var s) ? s.GetString() : "",
+                    Name = request.Name,
+                    Description = request.Description ?? string.Empty,
+                    Host = request.Host ?? string.Empty,
+                    Port = request.Port ?? string.Empty,
+                    Username = request.Username ?? string.Empty,
+                    Password = request.Password ?? string.Empty,
+                    DatabaseName = request.DatabaseName ?? string.Empty,
+                    Scheme = request.Scheme ?? string.Empty,
                     ProductId = product.Id,
                     Status = ConnectionStatus.Active,
                     InterfaceType = InterfaceType.Db
                 },
                 
-                _ => throw new Exception($"Unknown type: {interfaceType}")
+                InterfaceType.Kafka => new KafkaInterface
+                {
+                    Name = request.Name,
+                    Description = request.Description ?? string.Empty,
+                    BootstrapServers = request.BootstrapServers ?? string.Empty,
+                    Username = request.Username ?? string.Empty,
+                    Password = request.Password ?? string.Empty,
+                    TopicName = request.TopicName ?? string.Empty,
+                    ProductId = product.Id,
+                    Status = ConnectionStatus.Active,
+                    InterfaceType = InterfaceType.Kafka
+                },
+                
+                _ => throw new ArgumentException($"Unsupported interface type: {request.InterfaceType}")
             };
 
-            _context.DataInterfaces.Add(newInterface);
-            await _context.SaveChangesAsync();
+            context.DataInterfaces.Add(newInterface);
+            await context.SaveChangesAsync();
+
+            logger.LogInformation("Consumer interface created successfully. ID: {InterfaceId}, Type: {InterfaceType}",
+                newInterface.Id, newInterface.InterfaceType);
 
             return Ok(new
             {
                 Success = true,
+                Message = "Consumer interface created successfully",
                 InterfaceId = newInterface.Id,
                 ProductId = product.Id,
                 InterfaceType = newInterface.InterfaceType.ToString()
@@ -109,7 +116,7 @@ public class InterfaceController
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create consumer interface");
+            logger.LogError(ex, "Error creating consumer interface: {ErrorMessage}", ex.Message);
             return StatusCode(500, new { Success = false, Error = ex.Message });
         }
     }
@@ -117,7 +124,7 @@ public class InterfaceController
     [HttpGet]
     public async Task<IActionResult> GetAllInterfaces()
     {
-        var interfaces = await _context.DataInterfaces
+        var interfaces = await context.DataInterfaces
             .Include(di => di.Product)
             .Select(di => new
             {
@@ -127,6 +134,7 @@ public class InterfaceController
                 di.InterfaceType,
                 di.Status,
                 ProductName = di.Product.NameProduct,
+                ProductType = di.Product.ProductType,
                 
                 // Kafka specific
                 BootstrapServers = (di as KafkaInterface) != null ? ((KafkaInterface)di).BootstrapServers : null,
@@ -134,6 +142,7 @@ public class InterfaceController
                 
                 // API specific
                 Host = (di as ApiInterface) != null ? ((ApiInterface)di).Host : null,
+                Port = (di as ApiInterface) != null ? ((ApiInterface)di).Port : null,
                 Endpoint = (di as ApiInterface) != null ? ((ApiInterface)di).Endpoint : null,
                 
                 // Database specific
@@ -148,13 +157,47 @@ public class InterfaceController
     [HttpGet("{id}")]
     public async Task<IActionResult> GetInterfaceById(int id)
     {
-        var interface_ = await _context.DataInterfaces
+        var interface_ = await context.DataInterfaces
             .Include(di => di.Product)
             .FirstOrDefaultAsync(di => di.Id == id);
             
         if (interface_ == null)
-            return Not(new { Success = false, Error = $"Interface {id} not found" });
+            return NotFound(new { Success = false, Error = $"Consumer interface {id} not found" });
             
-        return Ok(interface_);
+        var result = new
+        {
+            interface_.Id,
+            interface_.Name,
+            interface_.Description,
+            interface_.InterfaceType,
+            interface_.Status,
+            interface_.ProductId,
+            ProductName = interface_.Product?.NameProduct,
+            ProductType = interface_.Product?.ProductType,
+        
+            // Kafka specific
+            BootstrapServers = (interface_ as KafkaInterface)?.BootstrapServers,
+            TopicName = (interface_ as KafkaInterface)?.TopicName,
+        
+            // API specific
+            Host = (interface_ as ApiInterface)?.Host,
+            Port = (interface_ as ApiInterface)?.Port,
+            Endpoint = (interface_ as ApiInterface)?.Endpoint,
+            Token = (interface_ as ApiInterface)?.Token,
+        
+            // Database specific
+            DatabaseName = (interface_ as DatabaseInterface)?.DatabaseName,
+            Scheme = (interface_ as DatabaseInterface)?.Scheme,
+        
+            // Common
+            Username = (interface_ as ApiInterface)?.Username ?? 
+                       (interface_ as DatabaseInterface)?.Username ?? 
+                       (interface_ as KafkaInterface)?.Username,
+            Password = (interface_ as ApiInterface)?.Password ?? 
+                       (interface_ as DatabaseInterface)?.Password ?? 
+                       (interface_ as KafkaInterface)?.Password
+        };
+    
+        return Ok(result);
     }
 }

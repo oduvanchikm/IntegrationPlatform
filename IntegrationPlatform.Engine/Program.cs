@@ -2,6 +2,7 @@ using IntegrationPlatform.Engine.Applications.Interfaces;
 using IntegrationPlatform.Engine.Applications.Kafka;
 using IntegrationPlatform.Engine.Applications.Orchestration;
 using IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
+using IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
 using IntegrationPlatform.Publication.DataAccess;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using IntegrationPlatform.Subscription.DataAccess;
@@ -26,32 +27,29 @@ builder.Services.AddDbContextFactory<SubscriptionDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("SubscriptionDbContext"));
 });
 
+builder.Services.AddScoped<KafkaReader>();
+builder.Services.AddScoped<KafkaWriter>();
+builder.Services.AddScoped<ApiReader>();
+builder.Services.AddScoped<ApiWriter>();
+builder.Services.AddScoped<DatabaseReader>();
+builder.Services.AddScoped<DatabaseWriter>();
+
 builder.Services.AddScoped<OrchestrationService>();
 
-builder.Services.AddScoped<ApiToKafkaHandler>();
-builder.Services.AddScoped<KafkaToApiHandler>();
 builder.Services.AddScoped<KafkaToKafkaHandler>();
+builder.Services.AddScoped<KafkaToApiHandler>();
 builder.Services.AddScoped<KafkaToDatabaseHandler>();
+builder.Services.AddScoped<ApiToKafkaHandler>();
+builder.Services.AddScoped<ApiToApiHandler>();
+builder.Services.AddScoped<ApiToDatabaseHandler>();
+builder.Services.AddScoped<DatabaseToKafkaHandler>();
+builder.Services.AddScoped<DatabaseToApiHandler>();
+builder.Services.AddScoped<DatabaseToDatabaseHandler>();
 
 builder.Services.AddScoped<KafkaMessageHandler>();
 builder.Services.AddScoped<IKafkaMessageHandler, KafkaMessageHandler>();
 
-builder.Services.AddHostedService<KafkaConsumer>(sp =>
-{
-    var logger = sp.GetRequiredService<ILogger<KafkaConsumer>>();
-    var configuration = sp.GetRequiredService<IConfiguration>();
-
-    var bootstrapServers = configuration["Kafka:BootstrapServers"];
-    if (string.IsNullOrEmpty(bootstrapServers))
-    {
-        logger.LogError("Kafka:BootstrapServers is not configured!");
-        throw new InvalidOperationException("Kafka:BootstrapServers is required");
-    }
-
-    logger.LogInformation("Kafka configured with BootstrapServers: {BootstrapServers}", bootstrapServers);
-
-    return new KafkaConsumer(logger, configuration, sp);
-});
+builder.Services.AddHostedService<KafkaConsumer>();
 
 builder.Services.AddLogging();
 

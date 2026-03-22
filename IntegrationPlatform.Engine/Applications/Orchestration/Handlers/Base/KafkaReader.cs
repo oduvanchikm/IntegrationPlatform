@@ -5,8 +5,6 @@ namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
 
 public class KafkaReader(ILogger<KafkaReader> logger)
 {
-    private readonly ILogger<KafkaReader> _logger = logger;
-    
     public async Task<List<string>> ReadFromKafkaAsync(KafkaInterface kafkaInterface, int batchSize = 100, int timeoutSeconds = 30)
     {
         var config = new ConsumerConfig
@@ -24,7 +22,7 @@ public class KafkaReader(ILogger<KafkaReader> logger)
         using var consumer = new ConsumerBuilder<Ignore, string>(config).Build();
         consumer.Subscribe(kafkaInterface.TopicName);
 
-        _logger.LogInformation($"Consumer subscribed to topic {kafkaInterface.TopicName}");
+        logger.LogInformation($"Consumer subscribed to topic {kafkaInterface.TopicName}");
 
         try
         {
@@ -38,16 +36,16 @@ public class KafkaReader(ILogger<KafkaReader> logger)
                 if (consumeResult == null) continue;
 
                 message.Add(consumeResult.Message.Value);
-                _logger.LogDebug("Consumed message from offset: {Offset}", consumeResult.Offset);
+                logger.LogDebug("Consumed message from offset: {Offset}", consumeResult.Offset);
 
                 consumer.Commit(consumeResult);
             }
 
-            _logger.LogInformation("Consumed {Count} messages from {Topic}", message.Count, kafkaInterface.TopicName);
+            logger.LogInformation("Consumed {Count} messages from {Topic}", message.Count, kafkaInterface.TopicName);
         }
         catch (ConsumeException e)
         {
-            _logger.LogError($"Error occured: {e.Error.Reason}");
+            logger.LogError($"Error occured: {e.Error.Reason}");
             Console.WriteLine(e);
             throw;
         }

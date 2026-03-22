@@ -1,6 +1,10 @@
+using IntegrationPlatform.Common.Models;
+
 namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
 
-public class DatabaseWriter(ILogger logger)
+public class DatabaseWriter(ILogger<DatabaseWriter> logger)
 {
-    private readonly ILogger _logger = logger;
+    public async Task WriteToDatabaseAsync(DatabaseInterface apiInterface, List<string> messages)
+    {
+    }
 }

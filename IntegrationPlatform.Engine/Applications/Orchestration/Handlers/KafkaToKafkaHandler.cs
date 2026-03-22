@@ -6,43 +6,39 @@ namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 
 public class KafkaToKafkaHandler(ILogger<KafkaToKafkaHandler> logger, KafkaReader kafkaReader, KafkaWriter kafkaWriter)
 {
-    private readonly ILogger _logger = logger;
-    private readonly KafkaReader _kafkaReader = kafkaReader;
-    private readonly KafkaWriter _kafkaWriter = kafkaWriter;
-
     public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface)
     {
-        _logger.LogInformation("========== KAFKA TO KAFKA HANDLER EXECUTE START ==========");
+        logger.LogInformation("========== KAFKA TO KAFKA HANDLER EXECUTE START ==========");
 
         var sourceKafka = publicationInterface as KafkaInterface;
         var targetKafka = subscriptionInterface as KafkaInterface;
 
         if (sourceKafka == null || targetKafka == null)
         {
-            _logger.LogError("Kafka and Kafka are required.");
+            logger.LogError("Kafka and Kafka are required.");
             return;
         }
 
-        _logger.LogInformation("Source Kafka: BootstrapServers={BS}, Topic={Topic}",
+        logger.LogInformation("Source Kafka: BootstrapServers={BS}, Topic={Topic}",
                 sourceKafka.BootstrapServers, sourceKafka.TopicName);
-        _logger.LogInformation("Target Kafka: BootstrapServers={BS}, Topic={Topic}",
+        logger.LogInformation("Target Kafka: BootstrapServers={BS}, Topic={Topic}",
                 targetKafka.BootstrapServers, targetKafka.TopicName);
 
         try
         {
-            var messages = await _kafkaReader.ReadFromKafkaAsync(sourceKafka, batchSize: 50);
+            var messages = await kafkaReader.ReadFromKafkaAsync(sourceKafka, batchSize: 50);
 
             if (!messages.Any())
             {
-                _logger.LogWarning("No messages found in source topic. Will retry later.");
+                logger.LogWarning("No messages found in source topic. Will retry later.");
                 return;
             }       
 
-            await _kafkaWriter.WriteKafkaAsync(targetKafka, messages);
+            await kafkaWriter.WriteToKafkaAsync(targetKafka, messages);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in KafkaToKafkaHandler.ExecuteAsync: {Message}", ex.Message);
+            logger.LogError(ex, "Error in KafkaToKafkaHandler.ExecuteAsync: {Message}", ex.Message);
         }
     }
 }

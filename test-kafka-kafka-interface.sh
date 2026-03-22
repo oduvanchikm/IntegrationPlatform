@@ -18,7 +18,7 @@ SOURCE_RESPONSE=$(curl -s -X POST http://localhost:5001/api/Publication/interfac
     "interfaceType": 1,
     "description": "Source Kafka for testing",
     "productType": 1,
-    "bootstrapServers": "kafka:9092",
+    "bootstrapServers": "kafka2:9092",
     "topicName": "source-topic",
     "username": "",
     "password": ""

@@ -5,17 +5,35 @@ namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 
 public class ApiToApiHandler(ILogger<ApiToApiHandler> logger, ApiReader apiReader, ApiWriter apiWriter)
 {
-    private readonly ILogger<ApiToApiHandler> _logger = logger;
-    private readonly ApiReader _apiReader = apiReader;
-    private readonly ApiWriter _apiWriter = apiWriter;
-
     public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface)
     {
-        _logger.LogInformation("========== API TO API ==========");
-        var data = await _apiReader.ReadFromApiAsync(publicationInterface);
-        if (!string.IsNullOrEmpty(data))
+        logger.LogInformation("========== API TO API HANDLER EXECUTE START ==========");
+
+        var sourceApi = publicationInterface as ApiInterface;
+        var targetApi = subscriptionInterface as ApiInterface;
+
+        if (sourceApi == null || targetApi == null)
         {
-            await _apiWriter.WriteToApiAsync(subscriptionInterface, new List<string> { data });
+            logger.LogError("Kafka and Kafka are required.");
+            return;
+        }
+
+        logger.LogInformation("Source Kafka: Endpoint={Endpoint}, Port={Port}, Host={Host}",
+            sourceApi.Endpoint, sourceApi.Port, sourceApi.Host);
+        logger.LogInformation("Target Kafka: Endpoint={Endpoint}, Port={Port}, Host={Host}",
+            targetApi.Endpoint, targetApi.Port, targetApi.Host);
+
+        try
+        {
+            var data = await apiReader.ReadFromApiAsync(sourceApi);
+            if (!string.IsNullOrEmpty(data))
+            {
+                await apiWriter.WriteToApiAsync(targetApi, new List<string> { data });
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error in ApiToApiHandler.ExecuteAsync: {Message}", ex.Message);
         }
     }
 }

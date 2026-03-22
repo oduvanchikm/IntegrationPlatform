@@ -3,16 +3,15 @@ using IntegrationPlatform.Common.Models;
 
 namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
 
-public class ApiWriter(ILogger logger)
+public class ApiWriter(ILogger<ApiWriter> logger)
 {
-    private readonly ILogger _logger = logger;
     private readonly HttpClient _httpClient = new();
     
     public async Task WriteToApiAsync(ApiInterface apiInterface, List<string> messages)
     {
         if (!messages.Any())
         {
-            _logger.LogInformation("No messages to send to API");
+            logger.LogInformation("No messages to send to API");
             return;
         }
 
@@ -28,21 +27,21 @@ public class ApiWriter(ILogger logger)
                 var response = await _httpClient.PostAsync(url, content);
                 response.EnsureSuccessStatusCode();
                 successCount++;
-                _logger.LogDebug("Message sent to API: {Url}", url);
+                logger.LogDebug("Message sent to API: {Url}", url);
             }
             catch (Exception ex)
             {
                 failCount++;
-                _logger.LogError(ex, "Failed to send message to API: {Url}", url);
+                logger.LogError(ex, "Failed to send message to API: {Url}", url);
             }
         }
 
-        _logger.LogInformation("Successfully sent {SuccessCount}/{TotalCount} messages to API",
+        logger.LogInformation("Successfully sent {SuccessCount}/{TotalCount} messages to API",
             successCount, messages.Count);
 
         if (failCount > 0)
         {
-            _logger.LogWarning("Failed to send {FailCount} messages", failCount);
+            logger.LogWarning("Failed to send {FailCount} messages", failCount);
         }
     }
 }

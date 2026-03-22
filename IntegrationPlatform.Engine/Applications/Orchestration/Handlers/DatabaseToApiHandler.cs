@@ -1,12 +1,10 @@
 using IntegrationPlatform.Common.Models;
+using IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
 
 namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 
-public class DatabaseToApiHandler(ILogger logger, IServiceProvider serviceProvider)
+public class DatabaseToApiHandler(ILogger<DatabaseToApiHandler> logger, DatabaseReader databaseReader, ApiWriter apiWriter)
 {
-    private readonly ILogger _logger = logger;
-    private readonly IServiceProvider _serviceProvider = serviceProvider;
-    
     public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface)
     {
         

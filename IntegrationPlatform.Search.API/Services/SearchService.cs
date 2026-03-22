@@ -172,8 +172,8 @@ public class SearchService(IDbContextFactory<PublicationDbContext> publicationCo
             Id = interface_.Id,
             Name = interface_.Name,
             Description = interface_.Description,
-            // InterfaceType = interface_.InterfaceType,
-            // Status = interface_.Status,
+            InterfaceType = interface_.InterfaceType.ToString(),
+            Status = interface_.Status.ToString(),
             ProductId = interface_.ProductId,
             ProductName = interface_.Product?.NameProduct ?? "Unknown"
         };

@@ -67,24 +67,36 @@ public class OrchestrationService(
                 case "ApiToApi":
                     logger.LogInformation("========== EXECUTING API TO API ==========");
                     logger.LogInformation("Creating ApiToApiHandler");
+
+                    var apiToApiHandler = ActivatorUtilities.CreateInstance<ApiToApiHandler>(serviceProvider);
+
+                    logger.LogInformation("Calling ApiToApiHandler.ExecuteAsync");
+                    await apiToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+
                     logger.LogInformation("========== API TO API EXECUTION COMPLETE ==========");
                     break;
-                
+
                 case "ApiToDatabase":
                     logger.LogInformation("========== EXECUTING API TO DATABASE ==========");
                     logger.LogInformation("Creating ApiToDatabaseHandler");
+
+                    var apiToDatabaseHandler = ActivatorUtilities.CreateInstance<ApiToDatabaseHandler>(serviceProvider);
+
+                    logger.LogInformation("Calling ApiToDatabaseHandler.ExecuteAsync");
+                    await apiToDatabaseHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+
                     logger.LogInformation("========== API TO DATABASE EXECUTION COMPLETE ==========");
                     break;
 
                 case "ApiToKafka":
                     logger.LogInformation("========== EXECUTING API TO KAFKA ==========");
                     logger.LogInformation("Creating ApiToKafkaHandler");
-                    
+
                     var apiToKafkaHandler = ActivatorUtilities.CreateInstance<ApiToKafkaHandler>(serviceProvider);
-                    
+
                     logger.LogInformation("Calling ApiToKafkaHandler.ExecuteAsync");
                     await apiToKafkaHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
-                    
+
                     logger.LogInformation("========== API TO KAFKA EXECUTION COMPLETE ==========");
                     break;
 
@@ -113,26 +125,58 @@ public class OrchestrationService(
                     break;
 
                 case "KafkaToDatabase":
+                    logger.LogInformation("========== EXECUTING KAFKA TO DATABASE ==========");
                     logger.LogInformation("Creating KafkaToDatabaseHandler");
+
                     var kafkaToDatabaseHandler =
                         ActivatorUtilities.CreateInstance<KafkaToDatabaseHandler>(serviceProvider);
+
+                    logger.LogInformation("Calling KafkaToKafkaHandler.ExecuteAsync");
                     await kafkaToDatabaseHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+
+                    logger.LogInformation("========== KAFKA TO DATABASE EXECUTION COMPLETE ==========");
                     break;
 
                 case "DatabaseToApi":
-                    logger.LogInformation("DatabaseToApi handler not implemented yet");
+                    logger.LogInformation("========== EXECUTING DATABASE TO API ==========");
+                    logger.LogInformation("Creating DatabaseToApiHandler");
+
+                    var databaseToApiHandler = ActivatorUtilities.CreateInstance<DatabaseToApiHandler>(serviceProvider);
+
+                    logger.LogInformation("Calling DatabaseToApiHandler.ExecuteAsync");
+                    await databaseToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+
+                    logger.LogInformation("========== DATABASE TO API EXECUTION COMPLETE ==========");
                     break;
 
                 case "DatabaseToKafka":
-                    logger.LogInformation("DatabaseToKafka handler not implemented yet");
+                    logger.LogInformation("========== EXECUTING DATABASE TO KAFKA ==========");
+                    logger.LogInformation("Creating DatabaseToKafkaHandler");
+
+                    var databaseToKafkaHandler =
+                        ActivatorUtilities.CreateInstance<DatabaseToKafkaHandler>(serviceProvider);
+
+                    logger.LogInformation("Calling DatabaseToKafkaHandler.ExecuteAsync");
+                    await databaseToKafkaHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+
+                    logger.LogInformation("========== DATABASE TO KAFKA EXECUTION COMPLETE ==========");
                     break;
 
                 case "DatabaseToDatabase":
-                    logger.LogInformation("DatabaseToDatabase handler not implemented yet");
+                    logger.LogInformation("========== EXECUTING DATABASE TO DATABASE ==========");
+                    logger.LogInformation("Creating DatabaseToDatabaseHandler");
+
+                    var databaseToDatabaseHandler =
+                        ActivatorUtilities.CreateInstance<DatabaseToDatabaseHandler>(serviceProvider);
+
+                    logger.LogInformation("Calling DatabaseToDatabaseHandler.ExecuteAsync");
+                    await databaseToDatabaseHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+
+                    logger.LogInformation("========== DATABASE TO DATABASE EXECUTION COMPLETE ==========");
                     break;
 
                 default:
-                    logger.LogWarning("Unknown integration pattern: {Pattern}", integrationPattern);
+                    logger.LogInformation("========== EXECUTING default ==========");
                     break;
             }
         }

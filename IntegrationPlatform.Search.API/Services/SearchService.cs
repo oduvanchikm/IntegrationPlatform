@@ -1,4 +1,5 @@
 using IntegrationPlatform.Common.Enums;
+using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using IntegrationPlatform.Search.API.DTO;
 using IntegrationPlatform.Search.API.Interfaces;
@@ -153,5 +154,59 @@ public class SearchService(IDbContextFactory<PublicationDbContext> publicationCo
             .ToListAsync();
 
         return result;
+    }
+
+    public async Task<InterfaceDetailsDto?> GetInterfaceByIdAsync(int id)
+    {
+        await using var context = await publicationContext.CreateDbContextAsync();
+
+        var interface_ = await context.DataInterfaces
+            .Include(di => di.Product)
+            .FirstOrDefaultAsync(di => di.Id == id && di.Status == ConnectionStatus.Active);
+
+        if (interface_ == null)
+            return null;
+
+        var dto = new InterfaceDetailsDto
+        {
+            Id = interface_.Id,
+            Name = interface_.Name,
+            Description = interface_.Description,
+            // InterfaceType = interface_.InterfaceType,
+            // Status = interface_.Status,
+            ProductId = interface_.ProductId,
+            ProductName = interface_.Product?.NameProduct ?? "Unknown"
+        };
+
+        // Заполняем специфичные поля в зависимости от типа
+        switch (interface_)
+        {
+            case KafkaInterface kafka:
+                dto.BootstrapServers = kafka.BootstrapServers;
+                dto.TopicName = kafka.TopicName;
+                dto.Username = kafka.Username;
+                dto.Password = kafka.Password;
+                break;
+
+            case ApiInterface api:
+                dto.Host = api.Host;
+                dto.Port = api.Port;
+                dto.Endpoint = api.Endpoint;
+                dto.Token = api.Token;
+                dto.Username = api.Username;
+                dto.Password = api.Password;
+                break;
+
+            case DatabaseInterface db:
+                dto.Host = db.Host;
+                dto.Port = db.Port;
+                dto.DatabaseName = db.DatabaseName;
+                dto.Scheme = db.Scheme;
+                dto.Username = db.Username;
+                dto.Password = db.Password;
+                break;
+        }
+
+        return dto;
     }
 }

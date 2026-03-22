@@ -31,6 +31,13 @@ builder.Services.AddDbContextFactory<SubscriptionDbContext>(options =>
 
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 
+builder.Services.AddHttpClient("SearchApi", client =>
+{
+    client.BaseAddress = new Uri("http://search-api:8080");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
 var app = builder.Build();
 
 app.UseSwagger();

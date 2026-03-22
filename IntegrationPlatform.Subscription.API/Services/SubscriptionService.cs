@@ -1,3 +1,5 @@
+using System.Text.Json;
+using IntegrationPlatform.Common.Enums;
 using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Subscription.API.DTO;
 using IntegrationPlatform.Subscription.API.Interfaces;
@@ -6,24 +8,48 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IntegrationPlatform.Subscription.API.Services;
 
-public class SubscriptionService(SubscriptionDbContext context, ILogger<SubscriptionService> logger)
+public class SubscriptionService(
+    SubscriptionDbContext context,
+    ILogger<SubscriptionService> logger,
+    IHttpClientFactory httpClientFactory)
     : ISubscriptionService
 {
     private readonly SubscriptionDbContext _context = context;
     private readonly ILogger<SubscriptionService> _logger = logger;
+    private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
 
     public async Task<ConnectionResult> CreateOrchestrationConfigAsync(ConnectionRequest request)
     {
         try
         {
+            _logger.LogInformation("Creating orchestration config for PubId: {PubId}, SubId: {SubId}",
+                request.PublicationInterfaceId, request.SubscriptionInterfaceId);
+
             var subscriptionInterface = await _context.DataInterfaces
                 .FirstOrDefaultAsync(di => di.Id == request.SubscriptionInterfaceId);
-                
+
             if (subscriptionInterface == null)
             {
-                return new ConnectionResult { 
-                    Success = false, 
-                    Error = "Subscription interface not found" 
+                _logger.LogWarning("Consumer interface {Id} not found in subscription DB",
+                    request.SubscriptionInterfaceId);
+                return new ConnectionResult
+                {
+                    Success = false,
+                    Error =
+                        $"Consumer interface {request.SubscriptionInterfaceId} not found in subscription database. Please create it first."
+                };
+            }
+
+            var sourceInterface = await FetchSourceInterfaceFromSearchApi(request.PublicationInterfaceId);
+
+            if (sourceInterface == null)
+            {
+                _logger.LogWarning("Source interface {Id} not found in publication DB",
+                    request.PublicationInterfaceId);
+                return new ConnectionResult
+                {
+                    Success = false,
+                    Error = $"Source interface {request.PublicationInterfaceId} not found in publication database."
                 };
             }
 
@@ -44,12 +70,13 @@ public class SubscriptionService(SubscriptionDbContext context, ILogger<Subscrip
             await _context.SaveChangesAsync();
 
             _logger.LogInformation(
-                "Created orchestration config {ConfigId} for {PubId} → {SubId}", 
+                "Created orchestration config {ConfigId} for {PubId} → {SubId}",
                 config.Id, request.PublicationInterfaceId, request.SubscriptionInterfaceId);
 
-            return new ConnectionResult { 
-                Success = true, 
-                OrchestrationConfigId = config.Id 
+            return new ConnectionResult
+            {
+                Success = true,
+                OrchestrationConfigId = config.Id
             };
         }
         catch (Exception ex)
@@ -58,7 +85,47 @@ public class SubscriptionService(SubscriptionDbContext context, ILogger<Subscrip
             return new ConnectionResult { Success = false, Error = ex.Message };
         }
     }
-    
+
+    private async Task<SourceInterfaceDto?> FetchSourceInterfaceFromSearchApi(int interfaceId)
+    {
+        try
+        {
+            var httpClient = _httpClientFactory.CreateClient("SearchApi");
+
+            var response = await httpClient.GetAsync($"/api/Search/interfaces/by-id/{interfaceId}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Search API returned {StatusCode} for source interface {Id}",
+                    response.StatusCode, interfaceId);
+                return null;
+            }
+
+            var json = await response.Content.ReadAsStringAsync();
+            var dto = JsonSerializer.Deserialize<SourceInterfaceDto>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (dto == null)
+            {
+                _logger.LogWarning("Failed to deserialize source interface {Id} from Search API", interfaceId);
+                return null;
+            }
+
+            _logger.LogInformation("Successfully fetched source interface {Id} from Search API: {Name} ({Type})",
+                dto.Id, dto.Name, dto.InterfaceType);
+
+            return dto;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching source interface {Id} from Search API", interfaceId);
+            return null;
+        }
+    }
+
+
     public async Task<List<OrchestrationConfig>> GetAllConnectionsAsync()
     {
         return await _context.OrchestrationConfigs
@@ -72,12 +139,13 @@ public class SubscriptionService(SubscriptionDbContext context, ILogger<Subscrip
         {
             var config = await _context.OrchestrationConfigs
                 .FirstOrDefaultAsync(oc => oc.Id == orchestrationConfigId);
-                
+
             if (config == null)
             {
-                return new ConnectionResult { 
-                    Success = false, 
-                    Error = "Connection not found" 
+                return new ConnectionResult
+                {
+                    Success = false,
+                    Error = "Connection not found"
                 };
             }
 

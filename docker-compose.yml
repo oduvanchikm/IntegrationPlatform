@@ -41,10 +41,10 @@
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
     depends_on:
       - zookeeper
     networks:
@@ -235,9 +235,11 @@
       - ConnectionStrings__SubscriptionDbContext=Host=postgres;Port=5432;Database=integration_platform;Username=admin;Password=password;Search Path=subscription
       - Kafka__BootstrapServers=kafka:9092
       - Kafka__GroupId=engine-consumer-group
-      - Kafka__Topic=debezium.publication.orchestration_configs
-      - KafkaSource__BootstrapServers=kafka2:9092
-      - KafkaSource__BootstrapServers=kafka3:9092
+      - Kafka__Topic=debezium.subscription.OrchestrationConfig
+      - KafkaSource__BootstrapServers=kafka2:9092,kafka33:9092
+      - KafkaSource__Topic=source-topic
+      - KafkaTarget__BootstrapServers=kafka33:9092
+      - KafkaTarget__Topic=target-topic
     depends_on:
       - postgres
       - kafka

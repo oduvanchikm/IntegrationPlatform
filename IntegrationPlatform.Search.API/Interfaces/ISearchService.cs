@@ -11,4 +11,6 @@ public interface ISearchService
 
     Task<List<InterfaceSearchResult>> SearchInterfacesAdvanced(string? productName, string? interfaceName,
         InterfaceType? interfaceType);
+
+    Task<InterfaceDetailsDto?> GetInterfaceByIdAsync(int id);
 }

@@ -1,8 +1,4 @@
 using Confluent.Kafka;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Configuration;
-using IntegrationPlatform.Engine.Applications.Interfaces;
 
 namespace IntegrationPlatform.Engine.Applications.Kafka;
 

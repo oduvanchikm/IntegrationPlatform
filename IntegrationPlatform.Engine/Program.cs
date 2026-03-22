@@ -40,16 +40,16 @@ builder.Services.AddHostedService<KafkaConsumer>(sp =>
 {
     var logger = sp.GetRequiredService<ILogger<KafkaConsumer>>();
     var configuration = sp.GetRequiredService<IConfiguration>();
-    
+
     var bootstrapServers = configuration["Kafka:BootstrapServers"];
     if (string.IsNullOrEmpty(bootstrapServers))
     {
         logger.LogError("Kafka:BootstrapServers is not configured!");
         throw new InvalidOperationException("Kafka:BootstrapServers is required");
     }
-    
+
     logger.LogInformation("Kafka configured with BootstrapServers: {BootstrapServers}", bootstrapServers);
-    
+
     return new KafkaConsumer(logger, configuration, sp);
 });
 

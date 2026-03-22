@@ -64,31 +64,46 @@ public class OrchestrationService(
         {
             switch (integrationPattern)
             {
+                case "ApiToApi":
+                    logger.LogInformation("========== EXECUTING API TO API ==========");
+                    logger.LogInformation("Creating ApiToApiHandler");
+                    logger.LogInformation("========== API TO API EXECUTION COMPLETE ==========");
+                    break;
+                
                 case "ApiToDatabase":
-                    logger.LogInformation("ApiToDatabase handler not implemented yet");
+                    logger.LogInformation("========== EXECUTING API TO DATABASE ==========");
+                    logger.LogInformation("Creating ApiToDatabaseHandler");
+                    logger.LogInformation("========== API TO DATABASE EXECUTION COMPLETE ==========");
                     break;
 
                 case "ApiToKafka":
+                    logger.LogInformation("========== EXECUTING API TO KAFKA ==========");
                     logger.LogInformation("Creating ApiToKafkaHandler");
+                    
                     var apiToKafkaHandler = ActivatorUtilities.CreateInstance<ApiToKafkaHandler>(serviceProvider);
+                    
+                    logger.LogInformation("Calling ApiToKafkaHandler.ExecuteAsync");
                     await apiToKafkaHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
-                    break;
-
-                case "ApiToApi":
-                    logger.LogInformation("ApiToApi handler not implemented yet");
+                    
+                    logger.LogInformation("========== API TO KAFKA EXECUTION COMPLETE ==========");
                     break;
 
                 case "KafkaToApi":
+                    logger.LogInformation("========== EXECUTING KAFKA TO API ==========");
                     logger.LogInformation("Creating KafkaToApiHandler");
+
                     var kafkaToApiHandler = ActivatorUtilities.CreateInstance<KafkaToApiHandler>(serviceProvider);
+
+                    logger.LogInformation("Calling KafkaToApiHandler.ExecuteAsync");
                     await kafkaToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+
+                    logger.LogInformation("========== KAFKA TO API EXECUTION COMPLETE ==========");
                     break;
 
                 case "KafkaToKafka":
                     logger.LogInformation("========== EXECUTING KAFKA TO KAFKA ==========");
-                    logger.LogInformation("Creating KafkaToKafkaHandler with DI");
+                    logger.LogInformation("Creating KafkaToKafkaHandler");
 
-                    // ВАЖНО: Используем DI для создания хендлера
                     var kafkaToKafkaHandler = ActivatorUtilities.CreateInstance<KafkaToKafkaHandler>(serviceProvider);
 
                     logger.LogInformation("Calling KafkaToKafkaHandler.ExecuteAsync");

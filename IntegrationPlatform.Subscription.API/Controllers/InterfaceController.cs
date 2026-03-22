@@ -67,7 +67,7 @@ public class InterfaceController(SubscriptionDbContext context, ILogger<Interfac
                     Status = ConnectionStatus.Active,
                     InterfaceType = InterfaceType.Api
                 },
-                
+
                 InterfaceType.Db => new DatabaseInterface
                 {
                     Name = request.Name,
@@ -82,7 +82,7 @@ public class InterfaceController(SubscriptionDbContext context, ILogger<Interfac
                     Status = ConnectionStatus.Active,
                     InterfaceType = InterfaceType.Db
                 },
-                
+
                 InterfaceType.Kafka => new KafkaInterface
                 {
                     Name = request.Name,
@@ -95,7 +95,7 @@ public class InterfaceController(SubscriptionDbContext context, ILogger<Interfac
                     Status = ConnectionStatus.Active,
                     InterfaceType = InterfaceType.Kafka
                 },
-                
+
                 _ => throw new ArgumentException($"Unsupported interface type: {request.InterfaceType}")
             };
 
@@ -135,22 +135,22 @@ public class InterfaceController(SubscriptionDbContext context, ILogger<Interfac
                 di.Status,
                 ProductName = di.Product.NameProduct,
                 ProductType = di.Product.ProductType,
-                
+
                 // Kafka specific
                 BootstrapServers = (di as KafkaInterface) != null ? ((KafkaInterface)di).BootstrapServers : null,
                 TopicName = (di as KafkaInterface) != null ? ((KafkaInterface)di).TopicName : null,
-                
+
                 // API specific
                 Host = (di as ApiInterface) != null ? ((ApiInterface)di).Host : null,
                 Port = (di as ApiInterface) != null ? ((ApiInterface)di).Port : null,
                 Endpoint = (di as ApiInterface) != null ? ((ApiInterface)di).Endpoint : null,
-                
+
                 // Database specific
                 DatabaseName = (di as DatabaseInterface) != null ? ((DatabaseInterface)di).DatabaseName : null,
                 Scheme = (di as DatabaseInterface) != null ? ((DatabaseInterface)di).Scheme : null
             })
             .ToListAsync();
-            
+
         return Ok(interfaces);
     }
 
@@ -160,10 +160,10 @@ public class InterfaceController(SubscriptionDbContext context, ILogger<Interfac
         var interface_ = await context.DataInterfaces
             .Include(di => di.Product)
             .FirstOrDefaultAsync(di => di.Id == id);
-            
+
         if (interface_ == null)
             return NotFound(new { Success = false, Error = $"Consumer interface {id} not found" });
-            
+
         var result = new
         {
             interface_.Id,
@@ -174,30 +174,30 @@ public class InterfaceController(SubscriptionDbContext context, ILogger<Interfac
             interface_.ProductId,
             ProductName = interface_.Product?.NameProduct,
             ProductType = interface_.Product?.ProductType,
-        
+
             // Kafka specific
             BootstrapServers = (interface_ as KafkaInterface)?.BootstrapServers,
             TopicName = (interface_ as KafkaInterface)?.TopicName,
-        
+
             // API specific
             Host = (interface_ as ApiInterface)?.Host,
             Port = (interface_ as ApiInterface)?.Port,
             Endpoint = (interface_ as ApiInterface)?.Endpoint,
             Token = (interface_ as ApiInterface)?.Token,
-        
+
             // Database specific
             DatabaseName = (interface_ as DatabaseInterface)?.DatabaseName,
             Scheme = (interface_ as DatabaseInterface)?.Scheme,
-        
+
             // Common
-            Username = (interface_ as ApiInterface)?.Username ?? 
-                       (interface_ as DatabaseInterface)?.Username ?? 
+            Username = (interface_ as ApiInterface)?.Username ??
+                       (interface_ as DatabaseInterface)?.Username ??
                        (interface_ as KafkaInterface)?.Username,
-            Password = (interface_ as ApiInterface)?.Password ?? 
-                       (interface_ as DatabaseInterface)?.Password ?? 
+            Password = (interface_ as ApiInterface)?.Password ??
+                       (interface_ as DatabaseInterface)?.Password ??
                        (interface_ as KafkaInterface)?.Password
         };
-    
+
         return Ok(result);
     }
 }

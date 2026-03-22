@@ -36,7 +36,7 @@ CONSUMER_RESPONSE=$(curl -s -X POST http://localhost:5003/api/Interface \
     "productName": "KafkaTargetProduct",
     "interfaceType": 1,
     "description": "Target Kafka for testing",
-    "bootstrapServers": "kafka3:9092",
+    "bootstrapServers": "kafka33:9092",
     "topicName": "target-topic",
     "username": "",
     "password": ""

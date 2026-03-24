@@ -19,7 +19,6 @@ public class InterfaceController(SubscriptionDbContext context, ILogger<Interfac
         {
             logger.LogInformation("Received consumer interface request: {@Request}", request);
 
-            // Базовая проверка
             if (string.IsNullOrEmpty(request.ProductName))
             {
                 logger.LogWarning("ProductName is required");
@@ -136,16 +135,13 @@ public class InterfaceController(SubscriptionDbContext context, ILogger<Interfac
                 ProductName = di.Product.NameProduct,
                 ProductType = di.Product.ProductType,
 
-                // Kafka specific
                 BootstrapServers = (di as KafkaInterface) != null ? ((KafkaInterface)di).BootstrapServers : null,
                 TopicName = (di as KafkaInterface) != null ? ((KafkaInterface)di).TopicName : null,
 
-                // API specific
                 Host = (di as ApiInterface) != null ? ((ApiInterface)di).Host : null,
                 Port = (di as ApiInterface) != null ? ((ApiInterface)di).Port : null,
                 Endpoint = (di as ApiInterface) != null ? ((ApiInterface)di).Endpoint : null,
 
-                // Database specific
                 DatabaseName = (di as DatabaseInterface) != null ? ((DatabaseInterface)di).DatabaseName : null,
                 Scheme = (di as DatabaseInterface) != null ? ((DatabaseInterface)di).Scheme : null
             })
@@ -175,21 +171,17 @@ public class InterfaceController(SubscriptionDbContext context, ILogger<Interfac
             ProductName = interface_.Product?.NameProduct,
             ProductType = interface_.Product?.ProductType,
 
-            // Kafka specific
             BootstrapServers = (interface_ as KafkaInterface)?.BootstrapServers,
             TopicName = (interface_ as KafkaInterface)?.TopicName,
 
-            // API specific
             Host = (interface_ as ApiInterface)?.Host,
             Port = (interface_ as ApiInterface)?.Port,
             Endpoint = (interface_ as ApiInterface)?.Endpoint,
             Token = (interface_ as ApiInterface)?.Token,
 
-            // Database specific
             DatabaseName = (interface_ as DatabaseInterface)?.DatabaseName,
             Scheme = (interface_ as DatabaseInterface)?.Scheme,
 
-            // Common
             Username = (interface_ as ApiInterface)?.Username ??
                        (interface_ as DatabaseInterface)?.Username ??
                        (interface_ as KafkaInterface)?.Username,

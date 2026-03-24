@@ -12,36 +12,33 @@ public class PublicationService(
     ILogger<PublicationService> logger)
     : IPublicationService
 {
-    private readonly IDbContextFactory<PublicationDbContext> _dbContextFactory = dbContextFactory;
-    private readonly ILogger<PublicationService> _logger = logger;
-
     public async Task<PublicationResult> PublishInterfaceAsync(InterfacePublishRequest request)
     {
         try
         {
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
+            await using var context = await dbContextFactory.CreateDbContextAsync();
 
-            _logger.LogInformation("Received interface publication request: {@Request}", request);
+            logger.LogInformation("Received interface publication request: {@Request}", request);
 
             if (string.IsNullOrEmpty(request.ProductName))
             {
-                _logger.LogWarning("ProductName is required");
+                logger.LogWarning("ProductName is required");
                 return new PublicationResult { Success = false, Error = "ProductName is required" };
             }
 
             if (string.IsNullOrEmpty(request.Name))
             {
-                _logger.LogWarning("Interface Name is required");
+                logger.LogWarning("Interface Name is required");
                 return new PublicationResult { Success = false, Error = "Interface Name is required" };
             }
 
-            _logger.LogDebug("Looking for product: {ProductName}", request.ProductName);
+            logger.LogDebug("Looking for product: {ProductName}", request.ProductName);
             var product = await context.Products
                 .FirstOrDefaultAsync(p => p.NameProduct == request.ProductName);
 
             if (product == null)
             {
-                _logger.LogInformation("Creating new product: {ProductName}", request.ProductName);
+                logger.LogInformation("Creating new product: {ProductName}", request.ProductName);
 
                 product = new Product
                 {
@@ -50,10 +47,10 @@ public class PublicationService(
                 };
                 context.Products.Add(product);
                 await context.SaveChangesAsync();
-                _logger.LogDebug("Created product with ID: {ProductId}", product.Id);
+                logger.LogDebug("Created product with ID: {ProductId}", product.Id);
             }
 
-            _logger.LogDebug("Creating interface of type: {InterfaceType}", request.InterfaceType);
+            logger.LogDebug("Creating interface of type: {InterfaceType}", request.InterfaceType);
 
             DataInterface newInterface = request.InterfaceType switch
             {
@@ -103,7 +100,7 @@ public class PublicationService(
             context.DataInterfaces.Add(newInterface);
             await context.SaveChangesAsync();
 
-            _logger.LogInformation("Interface published successfully. ID: {InterfaceId}, Type: {InterfaceType}",
+            logger.LogInformation("Interface published successfully. ID: {InterfaceId}, Type: {InterfaceType}",
                 newInterface.Id, newInterface.InterfaceType);
 
             return new PublicationResult
@@ -117,7 +114,7 @@ public class PublicationService(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error publishing interface: {ErrorMessage}", ex.Message);
+            logger.LogError(ex, "Error publishing interface: {ErrorMessage}", ex.Message);
             return new PublicationResult { Success = false, Error = ex.Message };
         }
     }

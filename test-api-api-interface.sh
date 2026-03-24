@@ -133,7 +133,7 @@ curl -s http://localhost:5101/api/target-data | jq . || echo "   ⚠ Target API 
 
 # 8. Показываем логи Engine
 echo -e "${BLUE}8. Последние логи Engine:${NC}"
-docker logs --tail 20 integration-engine | grep -E "API TO API|ApiToApi|Source API|Target API"
+docker logs --tail 20 integration-engine
 
 echo -e "\n${GREEN}✅ API-to-API интеграция настроена!${NC}"
 echo ""

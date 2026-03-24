@@ -215,7 +215,7 @@
     container_name: publication-api
     environment:
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__PublicationDbContext=Host=postgres;Port=5432;Database=integration_platform;Username=admin;Password=password;Search Path=publication
+      - ConnectionStrings__PublicationDbContext=Host=postgres;Port=5432;Database=integration_platform;Username=admin;Password=password;Search Path=publication;Include Error Detail=true
       - Kafka__BootstrapServers=kafka2:9092
     depends_on:
       - postgres

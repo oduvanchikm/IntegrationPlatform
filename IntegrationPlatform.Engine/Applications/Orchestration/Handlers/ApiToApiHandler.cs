@@ -14,7 +14,7 @@ public class ApiToApiHandler(ILogger<ApiToApiHandler> logger, ApiReader apiReade
 
         if (sourceApi == null || targetApi == null)
         {
-            logger.LogError("Kafka and Kafka are required.");
+            logger.LogError("api and api are required.");
             return;
         }
 

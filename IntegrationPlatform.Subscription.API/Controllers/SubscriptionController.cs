@@ -51,31 +51,29 @@ public class SubscriptionController(ISubscriptionService subscriptionService, IL
             c.ExecutionTimeoutSeconds,
             c.CreatedAt,
             c.UpdatedAt,
-        
-            // Данные consumer интерфейса (из subscription DB)
-            ConsumerInterface = c.DataInterface == null ? null : new
-            {
-                c.DataInterface.Id,
-                c.DataInterface.Name,
-                c.DataInterface.Description,
-                c.DataInterface.InterfaceType,
-                c.DataInterface.Status,
-                ProductName = (c.DataInterface.Product != null) ? c.DataInterface.Product.NameProduct : null,
-            
-                // Kafka specific
-                BootstrapServers = (c.DataInterface as KafkaInterface)?.BootstrapServers,
-                TopicName = (c.DataInterface as KafkaInterface)?.TopicName,
-            
-                // API specific
-                Host = (c.DataInterface as ApiInterface)?.Host,
-                Endpoint = (c.DataInterface as ApiInterface)?.Endpoint,
-            
-                // Database specific
-                DatabaseName = (c.DataInterface as DatabaseInterface)?.DatabaseName,
-                Scheme = (c.DataInterface as DatabaseInterface)?.Scheme
-            }
+
+            ConsumerInterface = c.DataInterface == null
+                ? null
+                : new
+                {
+                    c.DataInterface.Id,
+                    c.DataInterface.Name,
+                    c.DataInterface.Description,
+                    c.DataInterface.InterfaceType,
+                    c.DataInterface.Status,
+                    ProductName = (c.DataInterface.Product != null) ? c.DataInterface.Product.NameProduct : null,
+
+                    BootstrapServers = (c.DataInterface as KafkaInterface)?.BootstrapServers,
+                    TopicName = (c.DataInterface as KafkaInterface)?.TopicName,
+
+                    Host = (c.DataInterface as ApiInterface)?.Host,
+                    Endpoint = (c.DataInterface as ApiInterface)?.Endpoint,
+
+                    DatabaseName = (c.DataInterface as DatabaseInterface)?.DatabaseName,
+                    Scheme = (c.DataInterface as DatabaseInterface)?.Scheme
+                }
         });
-    
+
         return Ok(result);
     }
 

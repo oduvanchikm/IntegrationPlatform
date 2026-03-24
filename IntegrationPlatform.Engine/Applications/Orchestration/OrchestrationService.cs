@@ -1,3 +1,4 @@
+using IntegrationPlatform.Common.Enums;
 using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
@@ -23,26 +24,80 @@ public class OrchestrationService(
         await using var subscriptionDb = await subscriptionDbContext.CreateDbContextAsync();
 
         logger.LogInformation("Fetching publication interface with ID: {PubId}", config.InterfacePublicationId);
+        
         var publicationInterface = await publicationDb.DataInterfaces
             .Include(d => d.Product)
             .FirstOrDefaultAsync(d => d.Id == config.InterfacePublicationId);
-
-        logger.LogInformation("Fetching subscription interface with ID: {SubId}", config.InterfaceSubscriptionId);
-        var subscriptionInterface = await subscriptionDb.DataInterfaces
-            .Include(d => d.Product)
-            .Include(d => d.OrchestrationConfig)
-            .FirstOrDefaultAsync(d => d.Id == config.InterfaceSubscriptionId);
-
+        
         if (publicationInterface == null)
         {
             logger.LogError("Publication interface {PubId} NOT FOUND in database!", config.InterfacePublicationId);
             return;
         }
 
+        DataInterface enrichedPublication = publicationInterface;
+        switch (publicationInterface.InterfaceType)
+        {
+            case InterfaceType.Api:
+                var apiPublication = await publicationDb.ApiInterfaces.FirstOrDefaultAsync(d => d.Id == enrichedPublication.Id);
+                if (apiPublication != null)
+                {
+                    enrichedPublication = apiPublication;
+                }
+                break;
+            case InterfaceType.Kafka:
+                var kafkaPublication = await publicationDb.KafkaInterfaces.FirstOrDefaultAsync(d => d.Id == enrichedPublication.Id);
+                if (kafkaPublication != null)
+                {
+                    enrichedPublication = kafkaPublication;
+                }
+                break;
+            case InterfaceType.Db:
+                var dbPublication = await publicationDb.DatabaseInterfaces.FirstOrDefaultAsync(d => d.Id == enrichedPublication.Id);
+                if (dbPublication != null)
+                {
+                    enrichedPublication = dbPublication;
+                }
+                break;
+        }
+
+        logger.LogInformation("Fetching subscription interface with ID: {SubId}", config.InterfaceSubscriptionId);
+        
+        var subscriptionInterface = await subscriptionDb.DataInterfaces
+            .Include(d => d.Product)
+            .Include(d => d.OrchestrationConfig)
+            .FirstOrDefaultAsync(d => d.Id == config.InterfaceSubscriptionId);
+
         if (subscriptionInterface == null)
         {
             logger.LogError("Subscription interface {SubId} NOT FOUND in database!", config.InterfaceSubscriptionId);
             return;
+        }
+        
+        DataInterface enrichedSubscription = subscriptionInterface;
+        switch (enrichedSubscription.InterfaceType)
+        {
+            case InterfaceType.Api:
+                var apiSubscription = await subscriptionDb.ApiInterfaces.FirstOrDefaultAsync(d => d.Id == enrichedSubscription.Id);
+                if (apiSubscription != null)
+                {
+                    enrichedSubscription = apiSubscription;
+                }
+                break;
+            case InterfaceType.Kafka:
+                var kafkaSubscription = await subscriptionDb.KafkaInterfaces.FirstOrDefaultAsync(d => d.Id == enrichedSubscription.Id);
+                if (kafkaSubscription != null)
+                {
+                    enrichedSubscription = kafkaSubscription;
+                }
+                break;
+            case InterfaceType.Db:
+                var dbSubscription = await subscriptionDb.DatabaseInterfaces.FirstOrDefaultAsync(d => d.Id == enrichedSubscription.Id);
+                if (dbSubscription != null)
+                {
+                    enrichedSubscription = dbSubscription;
+                }
+                break;
         }
 
         logger.LogInformation("Publication interface found: ID={Id}, Name={Name}, Type={Type}",
@@ -50,7 +105,7 @@ public class OrchestrationService(
         logger.LogInformation("Subscription interface found: ID={Id}, Name={Name}, Type={Type}",
             subscriptionInterface.Id, subscriptionInterface.Name, subscriptionInterface.InterfaceType);
 
-        await HandleIntegration(config.IntegrationPattern, publicationInterface, subscriptionInterface, config);
+        await HandleIntegration(config.IntegrationPattern, enrichedPublication, enrichedSubscription, config);
 
         logger.LogInformation("========== HANDLE NEW ORCHESTRATION END ==========");
     }

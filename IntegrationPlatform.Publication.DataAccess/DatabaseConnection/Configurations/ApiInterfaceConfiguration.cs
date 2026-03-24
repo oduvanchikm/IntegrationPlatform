@@ -11,15 +11,12 @@ public class ApiInterfaceConfiguration : IEntityTypeConfiguration<ApiInterface>
         builder.ToTable("ApiInterface", "publication");
 
         builder.Property(e => e.Host)
-            .IsRequired()
             .HasMaxLength(500);
 
         builder.Property(e => e.Port)
-            .IsRequired()
             .HasMaxLength(10);
 
         builder.Property(e => e.Endpoint)
-            .IsRequired()
             .HasMaxLength(100);
 
         builder.Property(e => e.Username)

@@ -1,4 +1,28 @@
 ﻿services:
+  mock-api-source:
+    build:
+      context: .
+      dockerfile: IntegrationPlatform.MockApi/Dockerfile
+    container_name: mock-api-source
+    ports:
+      - "5100:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+    networks:
+      - app-network
+
+  mock-api-target:
+    build:
+      context: .
+      dockerfile: IntegrationPlatform.MockApi/Dockerfile
+    container_name: mock-api-target
+    ports:
+      - "5101:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+    networks:
+      - app-network
+  
   postgres:
     image: debezium/postgres:15
     container_name: integration-platform-postgres
@@ -37,14 +61,25 @@
     image: confluentinc/cp-kafka:7.5.0
     container_name: kafka
     ports:
-      - "9100:9092"
+      - "9100:9100"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9100
+      
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9100
+      
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+    healthcheck:
+      test: [ "CMD", "kafka-topics", "--list", "--bootstrap-server", "localhost:9092" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     depends_on:
       - zookeeper
     networks:
@@ -86,14 +121,19 @@
     image: confluentinc/cp-kafka:7.5.0
     container_name: kafka2
     ports:
-      - "9200:9092"
+      - "9200:9200"
     environment:
       KAFKA_BROKER_ID: 2
       KAFKA_ZOOKEEPER_CONNECT: zookeeper2:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9200
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092,PLAINTEXT_HOST://localhost:9200
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
     depends_on:
       - zookeeper2
     networks:
@@ -138,14 +178,19 @@
     image: confluentinc/cp-kafka:7.5.0
     container_name: kafka33
     ports:
-      - "9300:9092"
+      - "9300:9300"
     environment:
       KAFKA_BROKER_ID: 3
       KAFKA_ZOOKEEPER_CONNECT: zookeeper3:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka33:9092
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9300
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka33:9092,PLAINTEXT_HOST://localhost:9300
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
     depends_on:
       - zookeeper3
     networks:
@@ -209,20 +254,6 @@
       - "5003:8080"
     networks:
       - app-network
-
-#  frontend:
-#    build:
-#      context: ./integration-platform-ui
-#      dockerfile: Dockerfile
-#    container_name: integration-frontend
-#    ports:
-#      - "8080:80"
-#    depends_on:
-#      - publication-api
-#      - search-api
-#      - subscription-api
-#    networks:
-#      - app-network
   
   engine:
     build:
@@ -234,12 +265,14 @@
       - ConnectionStrings__PublicationDbContext=Host=postgres;Port=5432;Database=integration_platform;Username=admin;Password=password;Search Path=publication
       - ConnectionStrings__SubscriptionDbContext=Host=postgres;Port=5432;Database=integration_platform;Username=admin;Password=password;Search Path=subscription
       - Kafka__BootstrapServers=kafka:9092
-      - Kafka__GroupId=engine-consumer-group
+      - Kafka__GroupId=engine-service
       - Kafka__Topic=debezium.subscription.OrchestrationConfig
-      - KafkaSource__BootstrapServers=kafka2:9092,kafka33:9092
+
+      - KafkaSource__BootstrapServers=kafka2:9092
       - KafkaSource__Topic=source-topic
-      - KafkaTarget__BootstrapServers=kafka33:9092
+
       - KafkaTarget__Topic=target-topic
+      - KafkaTarget__BootstrapServers=kafka33:9092
     depends_on:
       - postgres
       - kafka

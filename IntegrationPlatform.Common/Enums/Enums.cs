@@ -20,14 +20,6 @@ public enum ConnectionStatus
     Deprecated
 }
 
-// public enum OrchestrationType
-// {
-//     KubernetesCronJob,
-//     KubernetesDeployment,
-//     AirflowDAG,
-//     CustomScript
-// }
-
 public enum IntegrationPattern
 {
     DatabaseToDatabase,

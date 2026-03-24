@@ -1,15 +1,13 @@
 using Confluent.Kafka;
-
-namespace IntegrationPlatform.Engine.Applications.Kafka;
+using IntegrationPlatform.Engine.Applications.Interfaces;
 
 public class KafkaConsumer(
     ILogger<KafkaConsumer> logger,
     IConfiguration configuration,
-    IServiceProvider serviceProvider)
+    IServiceScopeFactory scopeFactory)
     : BackgroundService
 {
-    private readonly int _reconnectDelayMs = 5000;
-    private readonly int _maxReconnectAttempts = 10;
+    private const int ReconnectDelayMs = 5000;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -19,80 +17,59 @@ public class KafkaConsumer(
         var topic = configuration["Kafka:Topic"];
         var groupId = configuration["Kafka:GroupId"];
 
-        int attempt = 0;
+        logger.LogInformation(
+            "Kafka config: Servers={Servers}, Topic={Topic}, Group={Group}",
+            bootstrapServers, topic, groupId);
 
-        while (!stoppingToken.IsCancellationRequested && attempt < _maxReconnectAttempts)
+        var config = new ConsumerConfig
+        {
+            BootstrapServers = bootstrapServers,
+            GroupId = groupId,
+            AutoOffsetReset = AutoOffsetReset.Earliest,
+            EnableAutoCommit = false
+        };
+
+        while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                var config = new ConsumerConfig
-                {
-                    BootstrapServers = bootstrapServers,
-                    GroupId = groupId,
-                    AutoOffsetReset = AutoOffsetReset.Earliest,
-                    EnableAutoCommit = false,
-                    SessionTimeoutMs = 6000,
-                    MaxPollIntervalMs = 300000,
-                    SocketTimeoutMs = 60000,
-                    ReconnectBackoffMs = 1000,
-                    ReconnectBackoffMaxMs = 10000
-                };
-
                 using var consumer = new ConsumerBuilder<Ignore, string>(config).Build();
                 consumer.Subscribe(topic);
 
-                logger.LogInformation("Kafka consumer started. Listening topic {Topic} on {BootstrapServers}",
+                logger.LogInformation(
+                    "Kafka consumer connected. Topic: {Topic}, Servers: {BootstrapServers}",
                     topic, bootstrapServers);
-
-                attempt = 0; // Сброс счетчика при успешном подключении
 
                 while (!stoppingToken.IsCancellationRequested)
                 {
-                    try
-                    {
-                        var consumeResult = consumer.Consume(TimeSpan.FromSeconds(1));
+                    var consumeResult = consumer.Consume(stoppingToken);
 
-                        if (consumeResult?.Message?.Value == null)
-                            continue;
+                    if (consumeResult?.Message?.Value == null)
+                        continue;
 
-                        logger.LogInformation("Message received from topic {Topic} at offset {Offset}",
-                            consumeResult.Topic, consumeResult.Offset);
+                    logger.LogInformation(
+                        "Message received from {Topic} at offset {Offset}",
+                        consumeResult.Topic, consumeResult.Offset);
 
-                        using var scope = serviceProvider.CreateScope();
-                        var handler = scope.ServiceProvider.GetRequiredService<KafkaMessageHandler>();
+                    using var scope = scopeFactory.CreateScope();
+                    var handler = scope.ServiceProvider.GetRequiredService<IKafkaMessageHandler>();
 
-                        await handler.HandleMessageAsync(consumeResult.Message.Value);
+                    await handler.HandleMessageAsync(consumeResult.Message.Value);
 
-                        consumer.Commit(consumeResult);
-                    }
-                    catch (ConsumeException ex)
-                    {
-                        logger.LogError(ex, "Error consuming message: {Error}", ex.Error.Reason);
-                        await Task.Delay(1000, stoppingToken);
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogError(ex, "Unexpected error processing message");
-                        await Task.Delay(1000, stoppingToken);
-                    }
+                    consumer.Commit(consumeResult);
                 }
-
-                consumer.Close();
+            }
+            catch (OperationCanceledException)
+            {
+                // нормальное завершение
+                logger.LogInformation("Kafka consumer stopping...");
             }
             catch (Exception ex)
             {
-                attempt++;
-                logger.LogWarning(ex,
-                    "Failed to connect to Kafka (attempt {Attempt}/{MaxAttempts}). Retrying in {Delay}ms...",
-                    attempt, _maxReconnectAttempts, _reconnectDelayMs);
+                logger.LogError(ex, "Kafka connection failed. Retrying in {Delay} ms...", ReconnectDelayMs);
 
-                await Task.Delay(_reconnectDelayMs, stoppingToken);
+                await Task.Delay(ReconnectDelayMs, stoppingToken);
             }
-        }
-
-        if (attempt >= _maxReconnectAttempts)
-        {
-            logger.LogError("Failed to connect to Kafka after {MaxAttempts} attempts", _maxReconnectAttempts);
         }
     }
 }

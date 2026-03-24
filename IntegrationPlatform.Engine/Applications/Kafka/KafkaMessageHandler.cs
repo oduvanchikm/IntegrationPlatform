@@ -20,50 +20,40 @@ public class KafkaMessageHandler(
             var jsonDocument = JsonDocument.Parse(json);
             logger.LogInformation("Successfully parsed JSON");
 
-            // Проверяем структуру сообщения Debezium
             if (jsonDocument.RootElement.TryGetProperty("payload", out var payload))
             {
                 logger.LogInformation("Found 'payload' field");
+                logger.LogInformation("Payload content: {Payload}", payload.ToString());
 
-                // Debezium отправляет { payload: { after: {...}, before: {...}, op: 'c' } }
-                if (payload.TryGetProperty("after", out var after))
+                var config = JsonSerializer.Deserialize<OrchestrationConfigModel>(payload.ToString(),
+                    new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+
+                if (config != null)
                 {
-                    logger.LogInformation("Found 'after' field: {After}", after.ToString());
+                    logger.LogInformation("SUCCESS: Deserialized OrchestrationConfig with ID: {ConfigId}",
+                        config.Id);
+                    logger.LogInformation("Config details: PubId={PubId}, SubId={SubId}, Pattern={Pattern}",
+                        config.InterfacePublicationId,
+                        config.InterfaceSubscriptionId,
+                        config.IntegrationPattern);
 
-                    // Получаем операцию (c = create, u = update, d = delete)
-                    if (payload.TryGetProperty("op", out var op))
-                    {
-                        logger.LogInformation("Operation type: {Op}", op.GetString());
-                    }
+                    using var scope = serviceProvider.CreateScope();
+                    var orchestrationService = scope.ServiceProvider.GetRequiredService<OrchestrationService>();
 
-                    var config = JsonSerializer.Deserialize<OrchestrationConfigModel>(after.ToString());
-                    if (config != null)
-                    {
-                        logger.LogInformation("SUCCESS: Deserialized OrchestrationConfig with ID: {ConfigId}",
-                            config.Id);
-                        logger.LogInformation("Config details: PubId={PubId}, SubId={SubId}, Pattern={Pattern}",
-                            config.InterfacePublicationId,
-                            config.InterfaceSubscriptionId,
-                            config.IntegrationPattern);
+                    logger.LogInformation(
+                        "Calling OrchestrationService.HandleNewOrchestration for config {ConfigId}", config.Id);
+                    await orchestrationService.HandleNewOrchestration(config);
 
-                        using var scope = serviceProvider.CreateScope();
-                        var orchestrationService = scope.ServiceProvider.GetRequiredService<OrchestrationService>();
-
-                        logger.LogInformation(
-                            "Calling OrchestrationService.HandleNewOrchestration for config {ConfigId}", config.Id);
-                        await orchestrationService.HandleNewOrchestration(config);
-
-                        logger.LogInformation("SUCCESS: Completed processing config {ConfigId}", config.Id);
-                    }
-                    else
-                    {
-                        logger.LogError("FAILED: Could not deserialize OrchestrationConfig from after field");
-                    }
+                    logger.LogInformation("SUCCESS: Completed processing config {ConfigId}", config.Id);
                 }
                 else
                 {
-                    logger.LogWarning("No 'after' field in payload. Available fields: {Fields}",
-                        string.Join(", ", payload.EnumerateObject().Select(p => p.Name)));
+                    logger.LogError("FAILED: Could not deserialize OrchestrationConfig from payload");
+                    logger.LogError("Payload was: {Payload}", payload.ToString());
                 }
             }
             else

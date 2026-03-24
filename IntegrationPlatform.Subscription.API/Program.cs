@@ -40,6 +40,12 @@ builder.Services.AddHttpClient("SearchApi", client =>
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
+    dbContext.Database.EnsureCreated();
+}
+
 app.UseSwagger();
 app.UseSwaggerUI();
 

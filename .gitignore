@@ -5,8 +5,7 @@ riderModule.iml
 /_ReSharper.Caches/
 /.git/
 /.idea/
-init-databases.sh
 .env
 .gitignore
-.DS_Store
+init-databases.sh
 .dockerignore

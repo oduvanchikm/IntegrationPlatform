@@ -6,6 +6,5 @@ riderModule.iml
 /.git/
 .idea
 .env
-.gitignore
 init-databases.sh
 .dockerignore

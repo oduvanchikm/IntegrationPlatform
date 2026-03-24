@@ -3,3 +3,10 @@ obj/
 /packages/
 riderModule.iml
 /_ReSharper.Caches/
+/.git/
+/.idea/
+init-databases.sh
+.env
+.gitignore
+.DS_Store
+.dockerignore

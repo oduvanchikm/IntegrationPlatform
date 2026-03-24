@@ -77,40 +77,34 @@ else
 fi
 
 # 4. Проверка Debezium коннектора
-echo -e "${BLUE}4. Проверка Debezium коннектора...${NC}"
-CONNECTOR_STATUS=$(curl -s http://localhost:8083/connectors/subscription-orchestration-connector/status 2>/dev/null)
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✓ Debezium коннектор уже существует${NC}"
-else
-    echo -e "${BLUE}   Создание Debezium коннектора...${NC}"
-    curl -s -X POST http://localhost:8083/connectors \
-      -H "Content-Type: application/json" \
-      -d '{
-        "name": "subscription-orchestration-connector",
-        "config": {
-          "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
-          "database.hostname": "postgres",
-          "database.port": "5432",
-          "database.user": "admin",
-          "database.password": "password",
-          "database.dbname": "integration_platform",
-          "database.server.name": "postgres",
-          "schema.include.list": "subscription",
-          "table.include.list": "subscription.OrchestrationConfig",
-          "plugin.name": "pgoutput",
-          "publication.name": "dbz_publication",
-          "slot.name": "dbz_subscription_slot",
-          "transforms": "unwrap",
-          "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
-          "transforms.unwrap.drop.tombstones": "false",
-          "key.converter": "org.apache.kafka.connect.json.JsonConverter",
-          "value.converter": "org.apache.kafka.connect.json.JsonConverter",
-          "key.converter.schemas.enable": "false",
-          "value.converter.schemas.enable": "false"
-        }
-      }' > /dev/null
-    echo -e "${GREEN}✓ Debezium коннектор создан${NC}"
-fi
+echo -e "${BLUE}4. Создание Debezium коннектора...${NC}"
+curl -s -X POST http://localhost:8083/connectors \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "subscription-orchestration-connector",
+    "config": {
+      "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+      "database.hostname": "postgres",
+      "database.port": "5432",
+      "database.user": "admin",
+      "database.password": "password",
+      "database.dbname": "integration_platform",
+      "database.server.name": "postgres",
+      "schema.include.list": "subscription",
+      "table.include.list": "subscription.OrchestrationConfig",
+      "plugin.name": "pgoutput",
+      "publication.name": "dbz_publication",
+      "slot.name": "dbz_subscription_slot",
+      "transforms": "unwrap",
+      "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+      "transforms.unwrap.drop.tombstones": "false",
+      "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+      "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+      "key.converter.schemas.enable": "false",
+      "value.converter.schemas.enable": "false"
+    }
+  }' > /dev/null
+echo -e "${GREEN}✓ Debezium коннектор создан${NC}"
 
 # 5. Проверка созданных интерфейсов
 echo -e "${BLUE}5. Проверка созданных интерфейсов...${NC}"

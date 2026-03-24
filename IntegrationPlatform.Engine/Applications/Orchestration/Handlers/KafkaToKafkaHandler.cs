@@ -24,21 +24,25 @@ public class KafkaToKafkaHandler(ILogger<KafkaToKafkaHandler> logger, KafkaReade
         logger.LogInformation("Target Kafka: BootstrapServers={BS}, Topic={Topic}",
                 targetKafka.BootstrapServers, targetKafka.TopicName);
 
-        try
+        while (true)
         {
-            var messages = await kafkaReader.ReadFromKafkaAsync(sourceKafka, batchSize: 50);
-
-            if (!messages.Any())
+            try
             {
-                logger.LogWarning("No messages found in source topic. Will retry later.");
-                return;
-            }       
+                var messages = await kafkaReader.ReadFromKafkaAsync(sourceKafka, batchSize: 50);
 
-            await kafkaWriter.WriteToKafkaAsync(targetKafka, messages);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error in KafkaToKafkaHandler.ExecuteAsync: {Message}", ex.Message);
+                if (messages.Any())
+                {
+                    logger.LogInformation("Consumed {Count} messages from source topic", messages.Count);
+                    await kafkaWriter.WriteToKafkaAsync(targetKafka, messages);
+                    logger.LogInformation("Successfully sent {Count} messages to target topic", messages.Count);
+                }
+
+                await Task.Delay(1000);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error in KafkaToKafkaHandler.ExecuteAsync: {Message}", ex.Message);
+            }
         }
     }
 }

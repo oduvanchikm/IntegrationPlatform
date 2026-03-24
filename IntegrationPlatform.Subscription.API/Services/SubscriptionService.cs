@@ -14,23 +14,19 @@ public class SubscriptionService(
     IHttpClientFactory httpClientFactory)
     : ISubscriptionService
 {
-    private readonly SubscriptionDbContext _context = context;
-    private readonly ILogger<SubscriptionService> _logger = logger;
-    private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
-
     public async Task<ConnectionResult> CreateOrchestrationConfigAsync(ConnectionRequest request)
     {
         try
         {
-            _logger.LogInformation("Creating orchestration config for PubId: {PubId}, SubId: {SubId}",
+            logger.LogInformation("Creating orchestration config for PubId: {PubId}, SubId: {SubId}",
                 request.PublicationInterfaceId, request.SubscriptionInterfaceId);
 
-            var subscriptionInterface = await _context.DataInterfaces
+            var subscriptionInterface = await context.DataInterfaces
                 .FirstOrDefaultAsync(di => di.Id == request.SubscriptionInterfaceId);
 
             if (subscriptionInterface == null)
             {
-                _logger.LogWarning("Consumer interface {Id} not found in subscription DB",
+                logger.LogWarning("Consumer interface {Id} not found in subscription DB",
                     request.SubscriptionInterfaceId);
                 return new ConnectionResult
                 {
@@ -44,7 +40,7 @@ public class SubscriptionService(
 
             if (sourceInterface == null)
             {
-                _logger.LogWarning("Source interface {Id} not found in publication DB",
+                logger.LogWarning("Source interface {Id} not found in publication DB",
                     request.PublicationInterfaceId);
                 return new ConnectionResult
                 {
@@ -66,10 +62,10 @@ public class SubscriptionService(
                 UpdatedAt = DateTime.UtcNow
             };
 
-            _context.OrchestrationConfigs.Add(config);
-            await _context.SaveChangesAsync();
+            context.OrchestrationConfigs.Add(config);
+            await context.SaveChangesAsync();
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Created orchestration config {ConfigId} for {PubId} → {SubId}",
                 config.Id, request.PublicationInterfaceId, request.SubscriptionInterfaceId);
 
@@ -81,7 +77,7 @@ public class SubscriptionService(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create orchestration config");
+            logger.LogError(ex, "Failed to create orchestration config");
             return new ConnectionResult { Success = false, Error = ex.Message };
         }
     }
@@ -90,13 +86,13 @@ public class SubscriptionService(
     {
         try
         {
-            var httpClient = _httpClientFactory.CreateClient("SearchApi");
+            var httpClient = httpClientFactory.CreateClient("SearchApi");
 
             var response = await httpClient.GetAsync($"/api/Search/interfaces/by-id/{interfaceId}");
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("Search API returned {StatusCode} for source interface {Id}",
+                logger.LogWarning("Search API returned {StatusCode} for source interface {Id}",
                     response.StatusCode, interfaceId);
                 return null;
             }
@@ -109,18 +105,18 @@ public class SubscriptionService(
 
             if (dto == null)
             {
-                _logger.LogWarning("Failed to deserialize source interface {Id} from Search API", interfaceId);
+                logger.LogWarning("Failed to deserialize source interface {Id} from Search API", interfaceId);
                 return null;
             }
 
-            _logger.LogInformation("Successfully fetched source interface {Id} from Search API: {Name} ({Type})",
+            logger.LogInformation("Successfully fetched source interface {Id} from Search API: {Name} ({Type})",
                 dto.Id, dto.Name, dto.InterfaceType);
 
             return dto;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching source interface {Id} from Search API", interfaceId);
+            logger.LogError(ex, "Error fetching source interface {Id} from Search API", interfaceId);
             return null;
         }
     }
@@ -128,8 +124,8 @@ public class SubscriptionService(
 
     public async Task<List<OrchestrationConfig>> GetAllConnectionsAsync()
     {
-        return await _context.OrchestrationConfigs
-            .Include(oc => oc.DataInterface) // Subscription interface
+        return await context.OrchestrationConfigs
+            .Include(oc => oc.DataInterface)
             .ToListAsync();
     }
 
@@ -137,7 +133,7 @@ public class SubscriptionService(
     {
         try
         {
-            var config = await _context.OrchestrationConfigs
+            var config = await context.OrchestrationConfigs
                 .FirstOrDefaultAsync(oc => oc.Id == orchestrationConfigId);
 
             if (config == null)
@@ -149,14 +145,14 @@ public class SubscriptionService(
                 };
             }
 
-            _context.OrchestrationConfigs.Remove(config);
-            await _context.SaveChangesAsync();
+            context.OrchestrationConfigs.Remove(config);
+            await context.SaveChangesAsync();
 
             return new ConnectionResult { Success = true };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to delete connection {ConfigId}", orchestrationConfigId);
+            logger.LogError(ex, "Failed to delete connection {ConfigId}", orchestrationConfigId);
             return new ConnectionResult { Success = false, Error = ex.Message };
         }
     }

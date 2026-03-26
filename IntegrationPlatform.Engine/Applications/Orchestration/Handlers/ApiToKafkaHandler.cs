@@ -1,14 +1,40 @@
-using Confluent.Kafka;
+using System.Text.Json;
 using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
-using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
-using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
-using Microsoft.EntityFrameworkCore;
 
 namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 
 public class ApiToKafkaHandler(ILogger<ApiToKafkaHandler> logger, ApiReader apiReader, KafkaWriter kafkaWriter)
 {
+    private string ExtractMessage(string jsonData)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(jsonData);
+
+            if (doc.RootElement.TryGetProperty("data", out var dataElement))
+            {
+                if (dataElement.TryGetProperty("message", out var messageElement))
+                {
+                    return messageElement.GetString() ?? string.Empty;
+                }
+            }
+        
+            if (doc.RootElement.TryGetProperty("message", out var directMessage))
+            {
+                return directMessage.GetString() ?? string.Empty;
+            }
+
+            logger.LogWarning("No 'message' field found in API response, using full response");
+            return jsonData;
+        }
+        catch (JsonException)
+        {
+            logger.LogWarning("API response is not valid JSON, sending raw data");
+            return jsonData;
+        }
+    }
+
     public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface)
     {
         logger.LogInformation("========== API TO KAFKA HANDLER EXECUTE START ==========");
@@ -33,7 +59,18 @@ public class ApiToKafkaHandler(ILogger<ApiToKafkaHandler> logger, ApiReader apiR
 
             if (!string.IsNullOrEmpty(data))
             {
-                await kafkaWriter.WriteToKafkaAsync(targetKafka, new List<string> { data });
+                logger.LogInformation("{data}", data);
+                var messageToSend = ExtractMessage(data);
+
+                if (!string.IsNullOrEmpty(messageToSend))
+                {
+                    await kafkaWriter.WriteToKafkaAsync(targetKafka, new List<string> { messageToSend });
+                    logger.LogInformation("Successfully sent message to Kafka: {Message}", messageToSend);
+                }
+                else
+                {
+                    logger.LogWarning("No message extracted from API response");
+                }
             }
         }
         catch (Exception ex)

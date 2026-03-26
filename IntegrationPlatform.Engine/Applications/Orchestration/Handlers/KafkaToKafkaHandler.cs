@@ -20,9 +20,9 @@ public class KafkaToKafkaHandler(ILogger<KafkaToKafkaHandler> logger, KafkaReade
         }
 
         logger.LogInformation("Source Kafka: BootstrapServers={BS}, Topic={Topic}",
-                sourceKafka.BootstrapServers, sourceKafka.TopicName);
+            sourceKafka.BootstrapServers, sourceKafka.TopicName);
         logger.LogInformation("Target Kafka: BootstrapServers={BS}, Topic={Topic}",
-                targetKafka.BootstrapServers, targetKafka.TopicName);
+            targetKafka.BootstrapServers, targetKafka.TopicName);
 
         while (true)
         {

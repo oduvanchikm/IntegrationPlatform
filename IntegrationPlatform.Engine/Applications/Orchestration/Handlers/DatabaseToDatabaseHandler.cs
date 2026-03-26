@@ -6,6 +6,5 @@ public class DatabaseToDatabaseHandler(ILogger<DatabaseToDatabaseHandler> logger
 {
     public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface)
     {
-        
     }
 }

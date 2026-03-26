@@ -18,7 +18,7 @@ public class ApiReader(ILogger<ApiReader> logger)
             return await response.Content.ReadAsStringAsync();
         }
         catch (Exception ex)
-        { 
+        {
             logger.LogError(ex, "Error calling API: {Url}", url);
             throw;
         }

@@ -1,6 +1,8 @@
 using Confluent.Kafka;
 using IntegrationPlatform.Engine.Applications.Interfaces;
 
+namespace IntegrationPlatform.Engine.Applications.Kafka;
+
 public class KafkaConsumer(
     ILogger<KafkaConsumer> logger,
     IConfiguration configuration,

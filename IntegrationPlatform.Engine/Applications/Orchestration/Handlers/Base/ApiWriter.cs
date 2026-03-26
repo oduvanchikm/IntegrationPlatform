@@ -6,7 +6,7 @@ namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
 public class ApiWriter(ILogger<ApiWriter> logger)
 {
     private readonly HttpClient _httpClient = new();
-    
+
     public async Task WriteToApiAsync(ApiInterface apiInterface, List<string> messages)
     {
         if (!messages.Any())

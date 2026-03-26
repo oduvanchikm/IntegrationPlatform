@@ -5,7 +5,8 @@ namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
 
 public class KafkaReader(ILogger<KafkaReader> logger)
 {
-    public async Task<List<string>> ReadFromKafkaAsync(KafkaInterface kafkaInterface, int batchSize = 100, int timeoutSeconds = 30)
+    public async Task<List<string>> ReadFromKafkaAsync(KafkaInterface kafkaInterface, int batchSize = 100,
+        int timeoutSeconds = 30)
     {
         var config = new ConsumerConfig
         {
@@ -55,5 +56,48 @@ public class KafkaReader(ILogger<KafkaReader> logger)
         }
 
         return message;
+    }
+
+    public async Task StreamFromKafkaAsync(KafkaInterface kafkaInterface, Func<string, Task> onMessage,
+        CancellationToken cancellationToken)
+    {
+        var config = new ConsumerConfig
+        {
+            BootstrapServers = kafkaInterface.BootstrapServers,
+            GroupId = $"streaming-{Guid.NewGuid()}",
+            AutoOffsetReset = AutoOffsetReset.Latest,
+            EnableAutoCommit = false
+        };
+
+        using var consumer = new ConsumerBuilder<Ignore, string>(config).Build();
+        consumer.Subscribe(kafkaInterface.TopicName);
+
+        logger.LogInformation($"Streaming consumer subscribed to topic {kafkaInterface.TopicName}");
+
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    var consumeResult = consumer.Consume(TimeSpan.FromSeconds(1));
+                    if (consumeResult?.Message?.Value != null)
+                    {
+                        logger.LogDebug("Streaming message from offset: {Offset}", consumeResult.Offset);
+                        await onMessage(consumeResult.Message.Value);
+                        consumer.Commit(consumeResult);
+                    }
+                }
+                catch (ConsumeException e)
+                {
+                    logger.LogError($"Error consuming: {e.Error.Reason}");
+                    await Task.Delay(1000, cancellationToken);
+                }
+            }
+        }
+        finally
+        {
+            consumer.Close();
+        }
     }
 }

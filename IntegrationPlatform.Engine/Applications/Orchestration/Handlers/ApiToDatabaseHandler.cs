@@ -3,7 +3,10 @@ using IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
 
 namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 
-public class ApiToDatabaseHandler(ILogger<ApiToDatabaseHandler> logger, ApiReader apiReader, DatabaseWriter databaseWriter)
+public class ApiToDatabaseHandler(
+    ILogger<ApiToDatabaseHandler> logger,
+    ApiReader apiReader,
+    DatabaseWriter databaseWriter)
 {
     public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface)
     {
@@ -22,7 +25,7 @@ public class ApiToDatabaseHandler(ILogger<ApiToDatabaseHandler> logger, ApiReade
             sourceApi.Endpoint, sourceApi.Port, sourceApi.Host);
         logger.LogInformation("Target Database: DatabaseName={DatabaseName}, Port={Port}, Host={Host}",
             targetDatabase.DatabaseName, targetDatabase.Port, targetDatabase.Host);
-        
+
         try
         {
             var data = await apiReader.ReadFromApiAsync(sourceApi);

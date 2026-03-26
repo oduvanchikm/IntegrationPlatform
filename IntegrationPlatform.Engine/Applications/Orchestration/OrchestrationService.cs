@@ -24,11 +24,11 @@ public class OrchestrationService(
         await using var subscriptionDb = await subscriptionDbContext.CreateDbContextAsync();
 
         logger.LogInformation("Fetching publication interface with ID: {PubId}", config.InterfacePublicationId);
-        
+
         var publicationInterface = await publicationDb.DataInterfaces
             .Include(d => d.Product)
             .FirstOrDefaultAsync(d => d.Id == config.InterfacePublicationId);
-        
+
         if (publicationInterface == null)
         {
             logger.LogError("Publication interface {PubId} NOT FOUND in database!", config.InterfacePublicationId);
@@ -39,30 +39,36 @@ public class OrchestrationService(
         switch (publicationInterface.InterfaceType)
         {
             case InterfaceType.Api:
-                var apiPublication = await publicationDb.ApiInterfaces.FirstOrDefaultAsync(d => d.Id == enrichedPublication.Id);
+                var apiPublication =
+                    await publicationDb.ApiInterfaces.FirstOrDefaultAsync(d => d.Id == enrichedPublication.Id);
                 if (apiPublication != null)
                 {
                     enrichedPublication = apiPublication;
                 }
+
                 break;
             case InterfaceType.Kafka:
-                var kafkaPublication = await publicationDb.KafkaInterfaces.FirstOrDefaultAsync(d => d.Id == enrichedPublication.Id);
+                var kafkaPublication =
+                    await publicationDb.KafkaInterfaces.FirstOrDefaultAsync(d => d.Id == enrichedPublication.Id);
                 if (kafkaPublication != null)
                 {
                     enrichedPublication = kafkaPublication;
                 }
+
                 break;
             case InterfaceType.Db:
-                var dbPublication = await publicationDb.DatabaseInterfaces.FirstOrDefaultAsync(d => d.Id == enrichedPublication.Id);
+                var dbPublication =
+                    await publicationDb.DatabaseInterfaces.FirstOrDefaultAsync(d => d.Id == enrichedPublication.Id);
                 if (dbPublication != null)
                 {
                     enrichedPublication = dbPublication;
                 }
+
                 break;
         }
 
         logger.LogInformation("Fetching subscription interface with ID: {SubId}", config.InterfaceSubscriptionId);
-        
+
         var subscriptionInterface = await subscriptionDb.DataInterfaces
             .Include(d => d.Product)
             .Include(d => d.OrchestrationConfig)
@@ -73,30 +79,36 @@ public class OrchestrationService(
             logger.LogError("Subscription interface {SubId} NOT FOUND in database!", config.InterfaceSubscriptionId);
             return;
         }
-        
+
         DataInterface enrichedSubscription = subscriptionInterface;
         switch (enrichedSubscription.InterfaceType)
         {
             case InterfaceType.Api:
-                var apiSubscription = await subscriptionDb.ApiInterfaces.FirstOrDefaultAsync(d => d.Id == enrichedSubscription.Id);
+                var apiSubscription =
+                    await subscriptionDb.ApiInterfaces.FirstOrDefaultAsync(d => d.Id == enrichedSubscription.Id);
                 if (apiSubscription != null)
                 {
                     enrichedSubscription = apiSubscription;
                 }
+
                 break;
             case InterfaceType.Kafka:
-                var kafkaSubscription = await subscriptionDb.KafkaInterfaces.FirstOrDefaultAsync(d => d.Id == enrichedSubscription.Id);
+                var kafkaSubscription =
+                    await subscriptionDb.KafkaInterfaces.FirstOrDefaultAsync(d => d.Id == enrichedSubscription.Id);
                 if (kafkaSubscription != null)
                 {
                     enrichedSubscription = kafkaSubscription;
                 }
+
                 break;
             case InterfaceType.Db:
-                var dbSubscription = await subscriptionDb.DatabaseInterfaces.FirstOrDefaultAsync(d => d.Id == enrichedSubscription.Id);
+                var dbSubscription =
+                    await subscriptionDb.DatabaseInterfaces.FirstOrDefaultAsync(d => d.Id == enrichedSubscription.Id);
                 if (dbSubscription != null)
                 {
                     enrichedSubscription = dbSubscription;
                 }
+
                 break;
         }
 
@@ -105,12 +117,12 @@ public class OrchestrationService(
         logger.LogInformation("Subscription interface found: ID={Id}, Name={Name}, Type={Type}",
             subscriptionInterface.Id, subscriptionInterface.Name, subscriptionInterface.InterfaceType);
 
-        await HandleIntegration(config.IntegrationPattern, enrichedPublication, enrichedSubscription, config);
+        HandleIntegration(config.IntegrationPattern, enrichedPublication, enrichedSubscription, config);
 
         logger.LogInformation("========== HANDLE NEW ORCHESTRATION END ==========");
     }
 
-    private async Task HandleIntegration(string integrationPattern, DataInterface publicationInterface,
+    private void HandleIntegration(string integrationPattern, DataInterface publicationInterface,
         DataInterface subscriptionInterface, OrchestrationConfigModel config)
     {
         logger.LogInformation("HandleIntegration called with pattern: {Pattern}", integrationPattern);
@@ -126,7 +138,17 @@ public class OrchestrationService(
                     var apiToApiHandler = ActivatorUtilities.CreateInstance<ApiToApiHandler>(serviceProvider);
 
                     logger.LogInformation("Calling ApiToApiHandler.ExecuteAsync");
-                    await apiToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await apiToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                        }
+                        catch (Exception e)
+                        {
+                            logger.LogError(e, "ApiToApiHandler.ExecuteAsync failed");
+                        }
+                    });
 
                     logger.LogInformation("========== API TO API EXECUTION COMPLETE ==========");
                     break;
@@ -138,7 +160,17 @@ public class OrchestrationService(
                     var apiToDatabaseHandler = ActivatorUtilities.CreateInstance<ApiToDatabaseHandler>(serviceProvider);
 
                     logger.LogInformation("Calling ApiToDatabaseHandler.ExecuteAsync");
-                    await apiToDatabaseHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await apiToDatabaseHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                        }
+                        catch (Exception e)
+                        {
+                            logger.LogError(e, "ApiToDatabaseHandler.ExecuteAsync failed");
+                        }
+                    });
 
                     logger.LogInformation("========== API TO DATABASE EXECUTION COMPLETE ==========");
                     break;
@@ -150,7 +182,17 @@ public class OrchestrationService(
                     var apiToKafkaHandler = ActivatorUtilities.CreateInstance<ApiToKafkaHandler>(serviceProvider);
 
                     logger.LogInformation("Calling ApiToKafkaHandler.ExecuteAsync");
-                    await apiToKafkaHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await apiToKafkaHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                        }
+                        catch (Exception e)
+                        {
+                            logger.LogError(e, "ApiToKafkaHandler.ExecuteAsync failed");
+                        }
+                    });
 
                     logger.LogInformation("========== API TO KAFKA EXECUTION COMPLETE ==========");
                     break;
@@ -162,7 +204,17 @@ public class OrchestrationService(
                     var kafkaToApiHandler = ActivatorUtilities.CreateInstance<KafkaToApiHandler>(serviceProvider);
 
                     logger.LogInformation("Calling KafkaToApiHandler.ExecuteAsync");
-                    await kafkaToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await kafkaToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                        }
+                        catch (Exception e)
+                        {
+                            logger.LogError(e, "KafkaToApiHandler.ExecuteAsync failed");
+                        }
+                    });
 
                     logger.LogInformation("========== KAFKA TO API EXECUTION COMPLETE ==========");
                     break;
@@ -174,7 +226,17 @@ public class OrchestrationService(
                     var kafkaToKafkaHandler = ActivatorUtilities.CreateInstance<KafkaToKafkaHandler>(serviceProvider);
 
                     logger.LogInformation("Calling KafkaToKafkaHandler.ExecuteAsync");
-                    await kafkaToKafkaHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await kafkaToKafkaHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                        }
+                        catch (Exception e)
+                        {
+                            logger.LogError(e, "KafkaToKafkaHandler.ExecuteAsync failed");
+                        }
+                    });
 
                     logger.LogInformation("========== KAFKA TO KAFKA EXECUTION COMPLETE ==========");
                     break;
@@ -186,8 +248,18 @@ public class OrchestrationService(
                     var kafkaToDatabaseHandler =
                         ActivatorUtilities.CreateInstance<KafkaToDatabaseHandler>(serviceProvider);
 
-                    logger.LogInformation("Calling KafkaToKafkaHandler.ExecuteAsync");
-                    await kafkaToDatabaseHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                    logger.LogInformation("Calling KafkaToDatabaseHandler.ExecuteAsync");
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await kafkaToDatabaseHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                        }
+                        catch (Exception e)
+                        {
+                            logger.LogError(e, "KafkaToDatabaseHandler.ExecuteAsync failed");
+                        }
+                    });
 
                     logger.LogInformation("========== KAFKA TO DATABASE EXECUTION COMPLETE ==========");
                     break;
@@ -199,7 +271,17 @@ public class OrchestrationService(
                     var databaseToApiHandler = ActivatorUtilities.CreateInstance<DatabaseToApiHandler>(serviceProvider);
 
                     logger.LogInformation("Calling DatabaseToApiHandler.ExecuteAsync");
-                    await databaseToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await databaseToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                        }
+                        catch (Exception e)
+                        {
+                            logger.LogError(e, "DatabaseToApiHandler.ExecuteAsync failed");
+                        }
+                    });
 
                     logger.LogInformation("========== DATABASE TO API EXECUTION COMPLETE ==========");
                     break;
@@ -212,7 +294,17 @@ public class OrchestrationService(
                         ActivatorUtilities.CreateInstance<DatabaseToKafkaHandler>(serviceProvider);
 
                     logger.LogInformation("Calling DatabaseToKafkaHandler.ExecuteAsync");
-                    await databaseToKafkaHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await databaseToKafkaHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                        }
+                        catch (Exception e)
+                        {
+                            logger.LogError(e, "DatabaseToKafkaHandler.ExecuteAsync failed");
+                        }
+                    });
 
                     logger.LogInformation("========== DATABASE TO KAFKA EXECUTION COMPLETE ==========");
                     break;
@@ -225,7 +317,17 @@ public class OrchestrationService(
                         ActivatorUtilities.CreateInstance<DatabaseToDatabaseHandler>(serviceProvider);
 
                     logger.LogInformation("Calling DatabaseToDatabaseHandler.ExecuteAsync");
-                    await databaseToDatabaseHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await databaseToDatabaseHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                        }
+                        catch (Exception e)
+                        {
+                            logger.LogError(e, "DatabaseToDatabaseHandler.ExecuteAsync failed");
+                        }
+                    });
 
                     logger.LogInformation("========== DATABASE TO DATABASE EXECUTION COMPLETE ==========");
                     break;

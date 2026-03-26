@@ -123,7 +123,7 @@ echo -e "${BLUE}7. Тестирование пересылки сообщени�
 
 # Отправляем тестовое сообщение в source-topic
 echo -e "${YELLOW}   Отправка тестового сообщения в source-topic...${NC}"
-docker exec kafka bash -c "echo 'Тестовое сообщение $(date)' | kafka-console-producer --broker-list kafka:9092 --topic source-topic 2>/dev/null"
+docker exec kafka bash -c "echo "Hello from Kafka producer! $(date)" | docker exec -i kafka kafka-console-producer --broker-list kafka:9092 --topic source-topic"
 echo -e "${GREEN}   ✓ Сообщение отправлено${NC}"
 
 # Ждем 5 секунд для обработки Engine

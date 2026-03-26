@@ -1,0 +1,10 @@
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+/.git/
+.idea
+.env
+init-databases.sh
+.dockerignore

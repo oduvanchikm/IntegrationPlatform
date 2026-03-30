@@ -142,7 +142,8 @@ public class OrchestrationService(
                     {
                         try
                         {
-                            await apiToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                            await apiToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface,
+                                config.ScheduleCron);
                         }
                         catch (Exception e)
                         {
@@ -164,7 +165,8 @@ public class OrchestrationService(
                     {
                         try
                         {
-                            await apiToDatabaseHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                            await apiToDatabaseHandler.ExecuteAsync(publicationInterface, subscriptionInterface,
+                                config.ScheduleCron);
                         }
                         catch (Exception e)
                         {
@@ -186,7 +188,8 @@ public class OrchestrationService(
                     {
                         try
                         {
-                            await apiToKafkaHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                            await apiToKafkaHandler.ExecuteAsync(publicationInterface, subscriptionInterface,
+                                config.ScheduleCron);
                         }
                         catch (Exception e)
                         {
@@ -275,7 +278,8 @@ public class OrchestrationService(
                     {
                         try
                         {
-                            await databaseToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                            await databaseToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface,
+                                config.ScheduleCron);
                         }
                         catch (Exception e)
                         {
@@ -298,7 +302,8 @@ public class OrchestrationService(
                     {
                         try
                         {
-                            await databaseToKafkaHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                            await databaseToKafkaHandler.ExecuteAsync(publicationInterface, subscriptionInterface,
+                                config.ScheduleCron);
                         }
                         catch (Exception e)
                         {
@@ -321,7 +326,8 @@ public class OrchestrationService(
                     {
                         try
                         {
-                            await databaseToDatabaseHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                            await databaseToDatabaseHandler.ExecuteAsync(publicationInterface, subscriptionInterface,
+                                config.ScheduleCron);
                         }
                         catch (Exception e)
                         {
@@ -340,6 +346,39 @@ public class OrchestrationService(
         catch (Exception ex)
         {
             logger.LogError(ex, "Error in HandleIntegration for pattern {Pattern}", integrationPattern);
+        }
+    }
+
+    public static void StopScheduledTask(int sourceId, int targetId, string pattern)
+    {
+        switch (pattern)
+        {
+            case "DatabaseToDatabase":
+                DatabaseToDatabaseHandler.StopTask(sourceId, targetId);
+                break;
+
+            case "DatabaseToApi":
+                DatabaseToApiHandler.StopTask(sourceId, targetId);
+                break;
+
+            case "DatabaseToKafka":
+                DatabaseToKafkaHandler.StopTask(sourceId, targetId);
+                break;
+
+            case "ApiToDatabase":
+                ApiToDatabaseHandler.StopTask(sourceId, targetId);
+                break;
+
+            case "ApiToApi":
+                ApiToApiHandler.StopTask(sourceId, targetId);
+                break;
+
+            case "ApiToKafka":
+                ApiToKafkaHandler.StopTask(sourceId, targetId);
+                break;
+
+            default:
+                break;
         }
     }
 }

@@ -33,6 +33,17 @@ public class PublicationController(
             result.InterfaceType
         });
     }
+    
+    [HttpGet("health")]
+    public IActionResult Health()
+    {
+        return Ok(new
+        {
+            status = "healthy",
+            timestamp = DateTime.UtcNow,
+            service = "publication-api"
+        });
+    }
 
     [HttpGet("test-connection")]
     public IActionResult TestConnection()

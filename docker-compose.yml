@@ -1,4 +1,61 @@
 ﻿services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+    networks:
+      - app-network
+  
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - app-network
+  
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki/loki-config.yaml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - app-network
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./monitoring/promtail/promtail-config.yaml:/etc/promtail/config.yaml
+    command: -config.file=/etc/promtail/config.yaml
+    depends_on:
+      - loki
+    networks:
+      - app-network
+  
   mock-api-source:
     build:
       context: .
@@ -43,6 +100,36 @@
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+    networks:
+      - app-network
+  
+  postgres-source:
+    image: debezium/postgres:15
+    container_name: postgres-source
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: source_db
+    ports:
+      - "5481:5432"
+    volumes:
+      - postgres_source_data:/var/lib/postgresql/data
+      - ./init-source-db.sh:/docker-entrypoint-initdb.d/init-source-db.sh
+    networks:
+      - app-network
+
+  postgres-target:
+    image: debezium/postgres:15
+    container_name: postgres-target
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: target_db
+    ports:
+      - "5482:5432"
+    volumes:
+      - postgres_target_data:/var/lib/postgresql/data
+      - ./init-target-db.sh:/docker-entrypoint-initdb.d/init-target-db.sh
     networks:
       - app-network
   
@@ -260,6 +347,9 @@
       context: .
       dockerfile: IntegrationPlatform.Engine/Dockerfile
     container_name: integration-engine
+    ports:
+      - "8080:8080"
+      - "9091:9091"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__PublicationDbContext=Host=postgres;Port=5432;Database=integration_platform;Username=admin;Password=password;Search Path=publication
@@ -288,3 +378,8 @@ networks:
 
 volumes:
   postgres_data:
+  postgres_source_data:
+  postgres_target_data:
+  grafana_data:
+  loki_data:
+  prometheus_data:

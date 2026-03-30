@@ -48,4 +48,15 @@ public class SearchController(ISearchService searchService) : ControllerBase
 
         return Ok(result);
     }
+    
+    [HttpGet("health")]
+    public IActionResult Health()
+    {
+        return Ok(new
+        {
+            status = "healthy",
+            timestamp = DateTime.UtcNow,
+            service = "search-api"
+        });
+    }
 }

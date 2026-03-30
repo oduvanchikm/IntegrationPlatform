@@ -35,11 +35,11 @@ public class KafkaToApiHandler(ILogger<KafkaToApiHandler> logger, KafkaReader ka
                 if (messages.Any())
                 {
                     logger.LogInformation("Consumed {Count} messages from Kafka", messages.Count);
-                    
-                    var jsonMessages = messages.Select(msg => 
+
+                    var jsonMessages = messages.Select(msg =>
                         JsonSerializer.Serialize(new { message = msg, timestamp = DateTime.UtcNow })
                     ).ToList();
-                    
+
                     await apiWriter.WriteToApiAsync(targetApi, jsonMessages);
                     logger.LogInformation("Successfully sent {Count} messages to API", messages.Count);
                 }

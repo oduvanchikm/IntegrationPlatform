@@ -3,6 +3,7 @@ using IntegrationPlatform.Subscription.API.Services;
 using IntegrationPlatform.Subscription.DataAccess;
 using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
+using Prometheus;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,6 +39,12 @@ builder.Services.AddHttpClient("SearchApi", client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+builder.Services.AddHttpClient("EngineApi", client =>
+{
+    client.BaseAddress = new Uri("http://integration-engine:8080");
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -60,5 +67,8 @@ app.MapControllers();
 app.UseStaticFiles();
 
 app.Urls.Add("http://0.0.0.0:8080");
+
+app.UseHttpMetrics();
+app.UseMetricServer();
 
 app.Run();

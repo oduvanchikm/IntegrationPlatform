@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'integration-platform'
+    static_configs:
+      - targets:
+          - 'publication-api:8080'
+          - 'subscription-api:8080'
+          - 'search-api:8080'
+          - 'integration-engine:8080'
+    metrics_path: /metrics

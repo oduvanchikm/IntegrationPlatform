@@ -63,7 +63,6 @@ public class KafkaConsumer(
             }
             catch (OperationCanceledException)
             {
-                // нормальное завершение
                 logger.LogInformation("Kafka consumer stopping...");
             }
             catch (Exception ex)

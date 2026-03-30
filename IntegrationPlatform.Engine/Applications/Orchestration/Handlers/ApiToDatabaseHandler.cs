@@ -26,10 +26,23 @@ public class ApiToDatabaseHandler(
 
             if (!string.IsNullOrEmpty(data))
             {
-                var messageToSave = ExtractMessage(data);
-                logger.LogInformation("Extracted message: {Message}", messageToSave);
-
-                await databaseWriter.WriteToDatabaseAsync(target, new List<string> { messageToSave });
+                string dataToSave = data;
+                try
+                {
+                    JsonDocument.Parse(data);
+                }
+                catch (JsonException)
+                {
+                    logger.LogWarning("API response is not valid JSON, wrapping in JSON object");
+                    dataToSave = JsonSerializer.Serialize(new 
+                    { 
+                        raw_data = data, 
+                        is_valid_json = false,
+                        received_at = DateTime.UtcNow
+                    });
+                }
+                
+                await databaseWriter.WriteToDatabaseAsync(target, new List<string> { dataToSave });
                 logger.LogInformation("Successfully saved message to database");
             }
             else
@@ -40,35 +53,6 @@ public class ApiToDatabaseHandler(
         catch (Exception ex)
         {
             logger.LogError(ex, "Error during API to database transfer");
-        }
-    }
-
-    private string ExtractMessage(string jsonData)
-    {
-        try
-        {
-            using var doc = JsonDocument.Parse(jsonData);
-
-            if (doc.RootElement.TryGetProperty("data", out var dataElement))
-            {
-                if (dataElement.TryGetProperty("message", out var messageElement))
-                {
-                    return messageElement.GetString() ?? string.Empty;
-                }
-            }
-
-            if (doc.RootElement.TryGetProperty("message", out var directMessage))
-            {
-                return directMessage.GetString() ?? string.Empty;
-            }
-
-            logger.LogWarning("No 'message' field found, using full response");
-            return jsonData;
-        }
-        catch (JsonException)
-        {
-            logger.LogWarning("API response is not valid JSON, sending raw data");
-            return jsonData;
         }
     }
 

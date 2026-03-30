@@ -144,6 +144,8 @@ public class SubscriptionService(
                     Error = "Connection not found"
                 };
             }
+            
+            await StopEngineTask(config.InterfacePublicationId, config.InterfaceSubscriptionId, config.IntegrationPattern.ToString());
 
             context.OrchestrationConfigs.Remove(config);
             await context.SaveChangesAsync();
@@ -154,6 +156,24 @@ public class SubscriptionService(
         {
             logger.LogError(ex, "Failed to delete connection {ConfigId}", orchestrationConfigId);
             return new ConnectionResult { Success = false, Error = ex.Message };
+        }
+    }
+    
+    private async Task StopEngineTask(int sourceId, int targetId, string pattern)
+    {
+        try
+        {
+            var httpClient = httpClientFactory.CreateClient("EngineApi");
+            var response = await httpClient.PostAsync($"/api/engine/stop-task?sourceId={sourceId}&targetId={targetId}&pattern={pattern}", null);
+        
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogWarning("Failed to stop engine task for {SourceId}→{TargetId}", sourceId, targetId);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error stopping engine task");
         }
     }
 }

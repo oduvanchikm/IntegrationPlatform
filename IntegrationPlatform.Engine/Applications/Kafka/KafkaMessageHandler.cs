@@ -2,6 +2,7 @@ using System.Text.Json;
 using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Engine.Applications.Interfaces;
 using IntegrationPlatform.Engine.Applications.Orchestration;
+using Prometheus;
 
 namespace IntegrationPlatform.Engine.Applications.Kafka;
 
@@ -10,6 +11,22 @@ public class KafkaMessageHandler(
     ILogger<KafkaMessageHandler> logger)
     : IKafkaMessageHandler
 {
+    private static readonly Counter MessagesProcessed = Metrics
+        .CreateCounter("engine_messages_processed_total",
+            "Total messages processed by Engine",
+            new CounterConfiguration
+            {
+                LabelNames = new[] { "pattern" }
+            });
+
+    private static readonly Histogram ProcessingTime = Metrics
+        .CreateHistogram("engine_processing_seconds",
+            "Processing time in seconds",
+            new HistogramConfiguration
+            {
+                LabelNames = new[] { "pattern" }
+            });
+
     public async Task HandleMessageAsync(string json)
     {
         logger.LogInformation("========== KAFKA MESSAGE RECEIVED ==========");
@@ -46,7 +63,11 @@ public class KafkaMessageHandler(
 
                     logger.LogInformation(
                         "Calling OrchestrationService.HandleNewOrchestration for config {ConfigId}", config.Id);
-                    await orchestrationService.HandleNewOrchestration(config);
+                    using (ProcessingTime.WithLabels(config.IntegrationPattern).NewTimer())
+                    {
+                        await orchestrationService.HandleNewOrchestration(config);
+                        MessagesProcessed.WithLabels(config.IntegrationPattern).Inc();
+                    }
 
                     logger.LogInformation("SUCCESS: Completed processing config {ConfigId}", config.Id);
                 }

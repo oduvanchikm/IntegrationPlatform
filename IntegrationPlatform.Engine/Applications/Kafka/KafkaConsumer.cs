@@ -1,6 +1,8 @@
 using Confluent.Kafka;
 using IntegrationPlatform.Engine.Applications.Interfaces;
 
+namespace IntegrationPlatform.Engine.Applications.Kafka;
+
 public class KafkaConsumer(
     ILogger<KafkaConsumer> logger,
     IConfiguration configuration,
@@ -61,7 +63,6 @@ public class KafkaConsumer(
             }
             catch (OperationCanceledException)
             {
-                // нормальное завершение
                 logger.LogInformation("Kafka consumer stopping...");
             }
             catch (Exception ex)

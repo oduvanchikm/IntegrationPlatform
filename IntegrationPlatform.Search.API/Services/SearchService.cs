@@ -118,40 +118,82 @@ public class SearchService(IDbContextFactory<PublicationDbContext> publicationCo
     {
         await using var context = await publicationContext.CreateDbContextAsync();
 
-        var products = context.DataInterfaces
+        var interfaces = context.DataInterfaces
             .Include(p => p.Product)
             .Where(di => di.Status == ConnectionStatus.Active)
             .AsQueryable();
 
         if (!string.IsNullOrEmpty(productName))
         {
-            products = products.Where(di => di.Product.NameProduct.Contains(productName));
+            interfaces = interfaces.Where(di => di.Product.NameProduct.Contains(productName));
         }
 
         if (!string.IsNullOrEmpty(interfaceName))
         {
-            products = products.Where(di => di.Name.Contains(interfaceName));
+            interfaces = interfaces.Where(di => di.Name.Contains(interfaceName));
         }
 
         if (interfaceType.HasValue)
         {
-            products = products.Where(di => di.InterfaceType == interfaceType.Value);
+            interfaces = interfaces.Where(di => di.InterfaceType == interfaceType.Value);
         }
 
-        var result = await products
-            .OrderBy(di => di.Product.NameProduct)
-            .ThenBy(di => di.Name)
-            .Select(di => new InterfaceSearchResult
+        var baseResults = await interfaces.ToListAsync();
+        var result = new List<InterfaceSearchResult>();
+
+        foreach (var di in baseResults)
+        {
+            var searchResult = new InterfaceSearchResult
             {
                 Id = di.Id,
                 Name = di.Name,
                 Description = di.Description,
                 InterfaceType = di.InterfaceType,
                 ConnectionStatus = di.Status,
-                ProductName = di.Product.NameProduct,
+                ProductName = di.Product?.NameProduct,
                 ProductId = di.ProductId
-            })
-            .ToListAsync();
+            };
+
+            switch (di.InterfaceType)
+            {
+                case InterfaceType.Api:
+                    var apiData = await context.ApiInterfaces.FirstOrDefaultAsync(a => a.Id == di.Id);
+                    if (apiData != null)
+                    {
+                        searchResult.Host = apiData.Host;
+                        searchResult.Port = apiData.Port;
+                        searchResult.Endpoint = apiData.Endpoint;
+                    }
+
+                    break;
+
+                case InterfaceType.Kafka:
+                    var kafkaData = await context.KafkaInterfaces
+                        .FirstOrDefaultAsync(k => k.Id == di.Id);
+                    if (kafkaData != null)
+                    {
+                        searchResult.BootstrapServers = kafkaData.BootstrapServers;
+                        searchResult.TopicName = kafkaData.TopicName;
+                    }
+
+                    break;
+
+                case InterfaceType.Db:
+                    var dbData = await context.DatabaseInterfaces
+                        .FirstOrDefaultAsync(d => d.Id == di.Id);
+                    if (dbData != null)
+                    {
+                        searchResult.Host = dbData.Host;
+                        searchResult.Port = dbData.Port;
+                        searchResult.DatabaseName = dbData.DatabaseName;
+                        searchResult.Scheme = dbData.Scheme;
+                    }
+
+                    break;
+            }
+
+            result.Add(searchResult);
+        }
 
         return result;
     }
@@ -178,7 +220,6 @@ public class SearchService(IDbContextFactory<PublicationDbContext> publicationCo
             ProductName = interface_.Product?.NameProduct ?? "Unknown"
         };
 
-        // Заполняем специфичные поля в зависимости от типа
         switch (interface_)
         {
             case KafkaInterface kafka:

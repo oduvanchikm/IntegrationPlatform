@@ -3,6 +3,7 @@ using IntegrationPlatform.Publication.API.Services;
 using IntegrationPlatform.Publication.DataAccess;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
+using Prometheus;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -55,5 +56,8 @@ app.UseStaticFiles();
 app.MapGet("/", () => Results.Redirect("/index.html"));
 
 app.Urls.Add("http://0.0.0.0:8080");
+
+app.UseHttpMetrics();
+app.UseMetricServer();
 
 app.Run();

@@ -14,7 +14,6 @@ public class OrchestrationConfig
     public int MaxRetryAttempts { get; set; } = 3;
     public int RetryDelaySeconds { get; set; } = 60;
     public int ExecutionTimeoutSeconds { get; set; } = 300;
-    
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

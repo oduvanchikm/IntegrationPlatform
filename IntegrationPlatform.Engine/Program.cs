@@ -8,6 +8,7 @@ using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using IntegrationPlatform.Subscription.DataAccess;
 using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
+using Prometheus;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -54,4 +55,8 @@ builder.Services.AddHostedService<KafkaConsumer>();
 builder.Services.AddLogging();
 
 var host = builder.Build();
+
+var metricServer = new MetricServer(port: 9091);
+metricServer.Start();
+
 host.Run();

@@ -1,39 +1,90 @@
 using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
+using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
+using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
+using Microsoft.EntityFrameworkCore;
+using NCrontab;
 
 namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 
-public class ApiToApiHandler(ILogger<ApiToApiHandler> logger, ApiReader apiReader, ApiWriter apiWriter)
+public class ApiToApiHandler(
+    ILogger<ApiToApiHandler> logger,
+    ApiReader apiReader,
+    ApiWriter apiWriter,
+    IDbContextFactory<PublicationDbContext> publicationDbContext,
+    IDbContextFactory<SubscriptionDbContext> subscriptionDbContext) : BaseBatchHandler(logger)
 {
-    public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface)
+    private async Task TransferData(ApiInterface source, ApiInterface target)
     {
-        logger.LogInformation("========== API TO API HANDLER EXECUTE START ==========");
+        try
+        {
+            logger.LogInformation("Starting transfer from API {Source} to API {Target}",
+                source.Endpoint, target.Endpoint);
+
+            var data = await apiReader.ReadFromApiAsync(source);
+
+            if (!string.IsNullOrEmpty(data))
+            {
+                await apiWriter.WriteToApiAsync(target, new List<string> { data });
+                logger.LogInformation("Successfully sent data to target API");
+            }
+            else
+            {
+                logger.LogWarning("No data received from source API");
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error during API to API transfer");
+        }
+    }
+
+    private async Task<bool> IsConnectionStillActive(int sourceId, int targetId)
+    {
+        await using var publicationDb = await publicationDbContext.CreateDbContextAsync();
+        await using var subscriptionDb = await subscriptionDbContext.CreateDbContextAsync();
+
+        var sourceExists = await publicationDb.DataInterfaces.AnyAsync(d => d.Id == sourceId);
+        var targetExists = await subscriptionDb.DataInterfaces.AnyAsync(d => d.Id == targetId);
+
+        return sourceExists && targetExists;
+    }
+
+    public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface,
+        string scheduleCron)
+    {
+        logger.LogInformation("========== API TO API HANDLER ==========");
 
         var sourceApi = publicationInterface as ApiInterface;
         var targetApi = subscriptionInterface as ApiInterface;
 
         if (sourceApi == null || targetApi == null)
         {
-            logger.LogError("Kafka and Kafka are required.");
+            logger.LogError("Source or target is not API");
             return;
         }
 
-        logger.LogInformation("Source Kafka: Endpoint={Endpoint}, Port={Port}, Host={Host}",
-            sourceApi.Endpoint, sourceApi.Port, sourceApi.Host);
-        logger.LogInformation("Target Kafka: Endpoint={Endpoint}, Port={Port}, Host={Host}",
-            targetApi.Endpoint, targetApi.Port, targetApi.Host);
+        logger.LogInformation("Source API: {Host}:{Port}{Endpoint}",
+            sourceApi.Host, sourceApi.Port, sourceApi.Endpoint);
+        logger.LogInformation("Target API: {Host}:{Port}{Endpoint}",
+            targetApi.Host, targetApi.Port, targetApi.Endpoint);
 
-        try
+        if (string.IsNullOrEmpty(scheduleCron) || scheduleCron == "* * * * *")
         {
-            var data = await apiReader.ReadFromApiAsync(sourceApi);
-            if (!string.IsNullOrEmpty(data))
+            await TransferData(sourceApi, targetApi);
+            return;
+        }
+
+        await RunScheduledAsync(sourceApi.Id, targetApi.Id, scheduleCron, async (cancellationToken) =>
+        {
+            if (!await IsConnectionStillActive(sourceApi.Id, targetApi.Id))
             {
-                await apiWriter.WriteToApiAsync(targetApi, new List<string> { data });
+                logger.LogInformation("Connection {SourceId}→{TargetId} no longer exists",
+                    sourceApi.Id, targetApi.Id);
+                throw new OperationCanceledException();
             }
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error in ApiToApiHandler.ExecuteAsync: {Message}", ex.Message);
-        }
+
+            await TransferData(sourceApi, targetApi);
+        });
     }
 }

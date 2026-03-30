@@ -8,20 +8,22 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Confluent.Kafka" Version="2.11.1"/>
+        <PackageReference Include="Confluent.Kafka" Version="2.11.1" />
         <PackageReference Include="KubernetesClient" Version="17.0.14" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0"/>
-        <PackageReference Include="Serilog" Version="4.3.1-dev-02385"/>
+        <PackageReference Include="NCrontab" Version="3.4.0" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
+        <PackageReference Include="prometheus-net.AspNetCore" Version="8.2.1" />
+        <PackageReference Include="Serilog" Version="4.3.1-dev-02385" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IntegrationPlatform.Common\IntegrationPlatform.Common.csproj"/>
-        <ProjectReference Include="../IntegrationPlatform.Publication.DataAccess/IntegrationPlatform.Publication.DataAccess.csproj"/>
-        <ProjectReference Include="..\IntegrationPlatform.Subscription.DataAccess\IntegrationPlatform.Subscription.DataAccess.csproj"/>
+        <ProjectReference Include="..\IntegrationPlatform.Common\IntegrationPlatform.Common.csproj" />
+        <ProjectReference Include="../IntegrationPlatform.Publication.DataAccess/IntegrationPlatform.Publication.DataAccess.csproj" />
+        <ProjectReference Include="..\IntegrationPlatform.Subscription.DataAccess\IntegrationPlatform.Subscription.DataAccess.csproj" />
     </ItemGroup>
 </Project>

@@ -8,7 +8,6 @@ BLUE='\033[0;34m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-# 1. Публикация Source Kafka интерфейса через Publication API
 echo -e "${BLUE}1. Публикация Source Kafka интерфейса...${NC}"
 SOURCE_RESPONSE=$(curl -s -X POST http://localhost:5001/api/Publication/interfaces \
   -H "Content-Type: application/json" \
@@ -27,7 +26,6 @@ SOURCE_RESPONSE=$(curl -s -X POST http://localhost:5001/api/Publication/interfac
 SOURCE_ID=$(echo $SOURCE_RESPONSE | jq -r '.interfaceId')
 echo -e "${GREEN}✓ Source Interface ID: $SOURCE_ID${NC}"
 
-# 2. Создание Consumer Kafka интерфейса через Subscription API
 echo -e "${BLUE}2. Создание Consumer Kafka интерфейса...${NC}"
 CONSUMER_RESPONSE=$(curl -s -X POST http://localhost:5003/api/Interface \
   -H "Content-Type: application/json" \
@@ -45,10 +43,8 @@ CONSUMER_RESPONSE=$(curl -s -X POST http://localhost:5003/api/Interface \
 CONSUMER_ID=$(echo $CONSUMER_RESPONSE | jq -r '.interfaceId')
 echo -e "${GREEN}✓ Consumer Interface ID: $CONSUMER_ID${NC}"
 
-# 3. Создание интеграции - ИСПРАВЛЕНО: используем HERE document для JSON
 echo -e "${BLUE}3. Создание интеграции Kafka → Kafka...${NC}"
 
-# Создаем JSON с помощью printf (без экранирования)
 JSON_DATA=$(printf '{
     "publicationInterfaceId": %d,
     "subscriptionInterfaceId": %d,
@@ -67,7 +63,6 @@ CONNECT_RESPONSE=$(curl -s -X POST http://localhost:5003/api/Subscription/connec
 
 echo "Connect response: $CONNECT_RESPONSE"
 
-# Проверяем ответ
 if echo "$CONNECT_RESPONSE" | grep -q "orchestrationConfigId"; then
     CONFIG_ID=$(echo "$CONNECT_RESPONSE" | jq -r '.orchestrationConfigId')
     echo -e "${GREEN}✓ Orchestration Config ID: $CONFIG_ID${NC}"
@@ -76,7 +71,6 @@ else
     echo "Full response: $CONNECT_RESPONSE"
 fi
 
-# 4. Проверка Debezium коннектора
 echo -e "${BLUE}4. Создание Debezium коннектора...${NC}"
 curl -s -X POST http://localhost:8083/connectors \
   -H "Content-Type: application/json" \
@@ -106,7 +100,6 @@ curl -s -X POST http://localhost:8083/connectors \
   }' > /dev/null
 echo -e "${GREEN}✓ Debezium коннектор создан${NC}"
 
-# 5. Проверка созданных интерфейсов
 echo -e "${BLUE}5. Проверка созданных интерфейсов...${NC}"
 echo -e "${BLUE}   Source интерфейс (через Search API):${NC}"
 curl -s "http://localhost:5002/api/Search/interfaces/by-id/$SOURCE_ID" | jq .
@@ -114,27 +107,21 @@ curl -s "http://localhost:5002/api/Search/interfaces/by-id/$SOURCE_ID" | jq .
 echo -e "${BLUE}   Consumer интерфейс (через Subscription API):${NC}"
 curl -s "http://localhost:5003/api/Interface/$CONSUMER_ID" | jq .
 
-# 6. Проверка созданных подключений
 echo -e "${BLUE}6. Проверка созданных подключений...${NC}"
 curl -s "http://localhost:5003/api/Subscription/connections" | jq .
 
-# 7. ТЕСТИРОВАНИЕ ПЕРЕСЫЛКИ СООБЩЕНИЙ
 echo -e "${BLUE}7. Тестирование пересылки сообщений...${NC}"
 
-# Отправляем тестовое сообщение в source-topic
 echo -e "${YELLOW}   Отправка тестового сообщения в source-topic...${NC}"
-docker exec kafka bash -c "echo 'Тестовое сообщение $(date)' | kafka-console-producer --broker-list kafka:9092 --topic source-topic 2>/dev/null"
+docker exec kafka bash -c "echo 'Kafka to Kafka integration! $(date)' | docker exec -i kafka kafka-console-producer --broker-list kafka:9092 --topic source-topic"
 echo -e "${GREEN}   ✓ Сообщение отправлено${NC}"
 
-# Ждем 5 секунд для обработки Engine
 echo -e "${YELLOW}   Ожидание обработки Engine (5 сек)...${NC}"
 sleep 5
 
-# Читаем последнее сообщение из target-topic
 echo -e "${YELLOW}   Чтение сообщения из target-topic:${NC}"
 docker exec kafka33 kafka-console-consumer --bootstrap-server kafka33:9092 --topic target-topic --from-beginning --max-messages 1 --timeout-ms 5000 2>/dev/null || echo "   ⚠ Нет сообщений в target-topic"
 
-# 8. Показываем логи Engine
 echo -e "${BLUE}8. Последние логи Engine:${NC}"
 docker logs --tail 10 integration-engine
 

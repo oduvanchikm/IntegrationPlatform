@@ -14,11 +14,16 @@ public class ApiReader(ILogger<ApiReader> logger)
         try
         {
             var response = await _httpClient.GetAsync(url);
+            var content = await response.Content.ReadAsStringAsync();
+        
+            logger.LogInformation("API Response Status: {StatusCode}", response.StatusCode);
+            logger.LogInformation("API Response Content: {Content}", content);
+        
             response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
+            return content;
         }
         catch (Exception ex)
-        { 
+        {
             logger.LogError(ex, "Error calling API: {Url}", url);
             throw;
         }

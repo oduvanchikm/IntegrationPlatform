@@ -5,6 +5,8 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>dotnet-IntegrationPlatform.Engine-77b9e356-3879-42df-b6d7-78f5e2292a97</UserSecretsId>
+        <Nullable>enable</Nullable>
+        <NoWarn>CS8618;CS1998</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

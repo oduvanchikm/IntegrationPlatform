@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integration Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .card h3 {
+            color: #764ba2;
+            margin: 15px 0 10px 0;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: opacity 0.3s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button.danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        button.success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .interfaces-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .interface-item {
+            background: #f8f9fa;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .interface-item:hover {
+            background: #e9ecef;
+        }
+
+        .interface-item.selected {
+            background: #667eea;
+            color: white;
+        }
+
+        .interface-item .name {
+            font-weight: bold;
+        }
+
+        .interface-item .type {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .interface-item.selected .type {
+            color: #ddd;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .badge.api { background: #4facfe; color: white; }
+        .badge.kafka { background: #f093fb; color: white; }
+        .badge.db { background: #43e97b; color: white; }
+
+        .status-bar {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status.online { background: #d4edda; color: #155724; }
+        .status.offline { background: #f8d7da; color: #721c24; }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading {
+            animation: pulse 1s infinite;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Integration Platform</h1>
+
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('publish')">Публикация интерфейса</button>
+        <button class="tab" onclick="showTab('search')">Поиск интерфейсов</button>
+        <button class="tab" onclick="showTab('connect')">Создание интеграции</button>
+        <button class="tab" onclick="showTab('connections')">Активные подключения</button>
+        <button class="tab" onclick="showTab('test')">Тестирование</button>
+    </div>
+
+    <div id="tab-publish" class="tab-content">
+        <div class="dashboard">
+            <div class="card">
+                <h2>Публикация интерфейса</h2>
+                <form id="publishForm">
+                    <div class="form-group">
+                        <label>Название интерфейса *</label>
+                        <input type="text" id="interfaceName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Название продукта *</label>
+                        <input type="text" id="productName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Тип интерфейса *</label>
+                        <select id="interfaceType">
+                            <option value="2">REST API</option>
+                            <option value="1">Kafka</option>
+                            <option value="0">Database</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Описание</label>
+                        <textarea id="description" rows="3"></textarea>
+                    </div>
+
+                    <div id="apiFields">
+                        <h3>REST API параметры</h3>
+                        <div class="form-group">
+                            <label>Host</label>
+                            <input type="text" id="host" placeholder="http://localhost">
+                        </div>
+                        <div class="form-group">
+                            <label>Port</label>
+                            <input type="text" id="port" placeholder="8080">
+                        </div>
+                        <div class="form-group">
+                            <label>Endpoint</label>
+                            <input type="text" id="endpoint" placeholder="/api/data">
+                        </div>
+                    </div>
+
+                    <div id="kafkaFields" style="display:none;">
+                        <h3>Kafka параметры</h3>
+                        <div class="form-group">
+                            <label>Bootstrap Servers</label>
+                            <input type="text" id="bootstrapServers" placeholder="localhost:9092">
+                        </div>
+                        <div class="form-group">
+                            <label>Topic Name</label>
+                            <input type="text" id="topicName" placeholder="my-topic">
+                        </div>
+                    </div>
+
+                    <div id="dbFields" style="display:none;">
+                        <h3>Database параметры</h3>
+                        <div class="form-group">
+                            <label>Host</label>
+                            <input type="text" id="dbHost" placeholder="localhost">
+                        </div>
+                        <div class="form-group">
+                            <label>Port</label>
+                            <input type="text" id="dbPort" placeholder="5432">
+                        </div>
+                        <div class="form-group">
+                            <label>Database Name</label>
+                            <input type="text" id="databaseName" placeholder="my_db">
+                        </div>
+                        <div class="form-group">
+                            <label>Schema</label>
+                            <input type="text" id="schema" placeholder="public">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="username">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="password">
+                    </div>
+
+                    <button type="submit">Опубликовать</button>
+                </form>
+                <div id="publishResult" class="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-search" class="tab-content hidden">
+        <div class="dashboard">
+            <div class="card">
+                <h2>Поиск интерфейсов</h2>
+                <div class="form-group">
+                    <label>Поиск по названию продукта</label>
+                    <input type="text" id="searchProduct" placeholder="Название продукта">
+                    <button onclick="searchByProduct()" style="margin-top:10px;">Искать</button>
+                </div>
+                <div class="form-group">
+                    <label>Поиск по названию интерфейса</label>
+                    <input type="text" id="searchInterface" placeholder="Название интерфейса">
+                    <button onclick="searchByInterface()" style="margin-top:10px;">Искать</button>
+                </div>
+                <div class="form-group">
+                    <label>Фильтр по типу</label>
+                    <select id="filterType">
+                        <option value="">Все</option>
+                        <option value="0">Database</option>
+                        <option value="1">Kafka</option>
+                        <option value="2">API</option>
+                    </select>
+                    <button onclick="searchByType()" style="margin-top:10px;">Искать</button>
+                </div>
+                <button onclick="searchAll()" class="success">Показать все</button>
+
+                <div id="searchResults" class="interfaces-list" style="margin-top:20px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-connect" class="tab-content hidden">
+        <div class="dashboard">
+            <div class="card">
+                <h2>Создание интеграции</h2>
+                <div class="form-group">
+                    <label>Source интерфейс (источник)</label>
+                    <select id="sourceInterface"></select>
+                </div>
+                <div class="form-group">
+                    <label>Target интерфейс (потребитель)</label>
+                    <select id="targetInterface"></select>
+                </div>
+                <div class="form-group">
+                    <label>Паттерн интеграции</label>
+                    <select id="integrationPattern">
+                        <option value="0">Database → Database</option>
+                        <option value="1">Database → Kafka</option>
+                        <option value="2">Database → API</option>
+                        <option value="3">Kafka → Database</option>
+                        <option value="4">Kafka → API</option>
+                        <option value="5">API → Database</option>
+                        <option value="6">API → Kafka</option>
+                        <option value="7">API → API</option>
+                        <option value="8">Kafka → Kafka</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Расписание (cron)</label>
+                    <input type="text" id="scheduleCron" value="* * * * *" placeholder="* * * * *">
+                    <small>Примеры: "* * * * *" (каждую минуту), "*/5 * * * *" (каждые 5 минут)</small>
+                </div>
+                <div class="form-group">
+                    <label>Max Retry Attempts</label>
+                    <input type="number" id="maxRetry" value="3">
+                </div>
+                <div class="form-group">
+                    <label>Retry Delay (seconds)</label>
+                    <input type="number" id="retryDelay" value="30">
+                </div>
+                <button onclick="createConnection()">🔗 Создать интеграцию</button>
+                <div id="connectResult" class="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-connections" class="tab-content hidden">
+        <div class="dashboard">
+            <div class="card">
+                <h2>Активные подключения</h2>
+                <button onclick="loadConnections()" class="success">Обновить</button>
+                <div id="connectionsList" class="interfaces-list" style="margin-top:20px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-test" class="tab-content hidden">
+        <div class="dashboard">
+            <div class="card">
+                <h2>Отправка тестовых данных</h2>
+                <div class="form-group">
+                    <label>Тип теста</label>
+                    <select id="testType">
+                        <option value="api">REST API</option>
+                        <option value="kafka">Kafka</option>
+                        <option value="database">Database</option>
+                    </select>
+                </div>
+
+                <div id="testApiFields">
+                    <div class="form-group">
+                        <label>Сообщение для API</label>
+                        <textarea id="apiMessage" rows="3">{"message": "Test from UI", "value": 100}</textarea>
+                    </div>
+                    <button onclick="testApi()">Отправить в API</button>
+                </div>
+
+                <div id="testKafkaFields" style="display:none;">
+                    <div class="form-group">
+                        <label>Сообщение для Kafka</label>
+                        <textarea id="kafkaMessage" rows="3">Test message from UI</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Topic</label>
+                        <input type="text" id="kafkaTopic" value="source-topic">
+                    </div>
+                    <button onclick="testKafka()">Отправить в Kafka</button>
+                </div>
+
+                <div id="testDbFields" style="display:none;">
+                    <div class="form-group">
+                        <label>SQL запрос</label>
+                        <textarea id="sqlQuery" rows="3">INSERT INTO source.data (payload) VALUES ('{"message": "Test from UI"}')</textarea>
+                    </div>
+                    <button onclick="testDatabase()">Выполнить SQL</button>
+                </div>
+
+                <div id="testResult" class="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <span id="status" class="status">Проверка статуса...</span>
+    </div>
+</div>
+
+<script>
+    const API = {
+        publication: 'http://localhost:5001/api/Publication',
+        search: 'http://localhost:5002/api/Search/interfaces',
+        subscription: 'http://localhost:5003/api/Subscription'
+    };
+
+    let allInterfaces = [];
+
+    function showTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+        document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        event.target.classList.add('active');
+
+        if (tabName === 'connect') loadInterfacesForSelect();
+        if (tabName === 'connections') loadConnections();
+        if (tabName === 'search') searchAll();
+    }
+
+    document.getElementById('interfaceType')?.addEventListener('change', function() {
+        const type = parseInt(this.value);
+        document.getElementById('apiFields').style.display = type === 2 ? 'block' : 'none';
+        document.getElementById('kafkaFields').style.display = type === 1 ? 'block' : 'none';
+        document.getElementById('dbFields').style.display = type === 0 ? 'block' : 'none';
+    });
+
+    document.getElementById('testType')?.addEventListener('change', function() {
+        const type = this.value;
+        document.getElementById('testApiFields').style.display = type === 'api' ? 'block' : 'none';
+        document.getElementById('testKafkaFields').style.display = type === 'kafka' ? 'block' : 'none';
+        document.getElementById('testDbFields').style.display = type === 'database' ? 'block' : 'none';
+    });
+
+    document.getElementById('publishForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const type = parseInt(document.getElementById('interfaceType').value);
+
+        const data = {
+            name: document.getElementById('interfaceName').value,
+            productName: document.getElementById('productName').value,
+            interfaceType: type,
+            description: document.getElementById('description').value,
+            productType: 1,
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value
+        };
+
+        if (type === 2) {
+            data.host = document.getElementById('host').value;
+            data.port = document.getElementById('port').value;
+            data.endpoint = document.getElementById('endpoint').value;
+        } else if (type === 1) {
+            data.bootstrapServers = document.getElementById('bootstrapServers').value;
+            data.topicName = document.getElementById('topicName').value;
+        } else if (type === 0) { 
+            data.host = document.getElementById('dbHost').value;
+            data.port = document.getElementById('dbPort').value;
+            data.databaseName = document.getElementById('databaseName').value;
+            data.scheme = document.getElementById('schema').value;
+        }
+
+        showResult('publishResult', 'Публикация...', 'info');
+
+        try {
+            const response = await fetch(`${API.publication}/interfaces`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (result.success) {
+                showResult('publishResult', `Интерфейс опубликован! ID: ${result.interfaceId}`, 'success');
+                document.getElementById('publishForm').reset();
+            } else {
+                showResult('publishResult', `Ошибка: ${result.error || result.message}`, 'error');
+            }
+        } catch (error) {
+            showResult('publishResult', `Ошибка: ${error.message}`, 'error');
+        }
+    });
+
+    async function searchByProduct() {
+        const productName = document.getElementById('searchProduct').value;
+        if (!productName) return;
+
+        try {
+            const response = await fetch(`${API.search}/by-product?productName=${encodeURIComponent(productName)}`);
+            const results = await response.json();
+            displaySearchResults(results);
+        } catch (error) {
+            showResult('searchResults', `Ошибка: ${error.message}`, 'error', true);
+        }
+    }
+
+    async function searchByInterface() {
+        const interfaceName = document.getElementById('searchInterface').value;
+        if (!interfaceName) return;
+
+        try {
+            const response = await fetch(`${API.search}/by-interface?interfaceName=${encodeURIComponent(interfaceName)}`);
+            const results = await response.json();
+            displaySearchResults(results);
+        } catch (error) {
+            showResult('searchResults', `Ошибка: ${error.message}`, 'error', true);
+        }
+    }
+
+    async function searchByType() {
+        const type = document.getElementById('filterType').value;
+        if (!type && type !== '') return;
+
+        try {
+            const response = await fetch(`${API.search}/by-type?interfaceType=${type}`);
+            const results = await response.json();
+            displaySearchResults(results);
+        } catch (error) {
+            showResult('searchResults', `Ошибка: ${error.message}`, 'error', true);
+        }
+    }
+
+    async function searchAll() {
+        try {
+            const response = await fetch(`${API.search}/by-product?productName=`);
+            const results = await response.json();
+            displaySearchResults(results);
+        } catch (error) {
+            showResult('searchResults', `Ошибка: ${error.message}`, 'error', true);
+        }
+    }
+
+    function displaySearchResults(results) {
+        const container = document.getElementById('searchResults');
+        if (!results || results.length === 0) {
+            container.innerHTML = '<div class="interface-item">Интерфейсы не найдены</div>';
+            return;
+        }
+
+        container.innerHTML = results.map(item => `
+                <div class="interface-item" onclick="selectInterface(${item.id})">
+                    <div class="name">${item.name}</div>
+                    <div class="type">
+                        Продукт: ${item.productName} | ID: ${item.id}
+                        <span class="badge ${item.interfaceType === 2 ? 'api' : (item.interfaceType === 1 ? 'kafka' : 'db')}">
+                            ${item.interfaceType === 2 ? 'API' : (item.interfaceType === 1 ? 'Kafka' : 'DB')}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+
+        allInterfaces = results;
+    }
+
+    function selectInterface(id) {
+        const interface_ = allInterfaces.find(i => i.id === id);
+        if (interface_) {
+            alert(`Выбран интерфейс: ${interface_.name}\nТип: ${interface_.interfaceType === 2 ? 'API' : (interface_.interfaceType === 1 ? 'Kafka' : 'DB')}\nПродукт: ${interface_.productName}`);
+        }
+    }
+
+    async function loadInterfacesForSelect() {
+        try {
+            const sourceResponse = await fetch(`${API.search}/by-product?productName=`);
+            const sourceInterfaces = await sourceResponse.json();
+
+            const targetResponse = await fetch(`${API.subscription}/interfaces`);
+            let targetInterfaces = [];
+
+            if (targetResponse.ok) {
+                targetInterfaces = await targetResponse.json();
+            } else {
+                console.warn('Subscription /interfaces endpoint not found, using all interfaces');
+                targetInterfaces = sourceInterfaces;
+            }
+
+            const sourceSelect = document.getElementById('sourceInterface');
+            const targetSelect = document.getElementById('targetInterface');
+
+            sourceSelect.innerHTML = '<option value="">Выберите источник...</option>';
+            targetSelect.innerHTML = '<option value="">Выберите потребителя...</option>';
+
+            sourceInterfaces.forEach(item => {
+                const option = `<option value="${item.id}">[${item.interfaceType === 2 ? 'API' : (item.interfaceType === 1 ? 'Kafka' : 'DB')}] ${item.name} (${item.productName})</option>`;
+                sourceSelect.innerHTML += option;
+            });
+
+            targetInterfaces.forEach(item => {
+                const option = `<option value="${item.id}">[${item.interfaceType === 2 ? 'API' : (item.interfaceType === 1 ? 'Kafka' : 'DB')}] ${item.name} (${item.productName || item.product?.nameProduct || 'Unknown'})</option>`;
+                targetSelect.innerHTML += option;
+            });
+        } catch (error) {
+            console.error('Error loading interfaces:', error);
+        }
+    }
+
+    async function createConnection() {
+        const sourceId = document.getElementById('sourceInterface').value;
+        const targetId = document.getElementById('targetInterface').value;
+        const pattern = parseInt(document.getElementById('integrationPattern').value);
+
+        if (!sourceId || !targetId) {
+            showResult('connectResult', 'Выберите source и target интерфейсы', 'error');
+            return;
+        }
+
+        const data = {
+            publicationInterfaceId: parseInt(sourceId),
+            subscriptionInterfaceId: parseInt(targetId),
+            integrationPattern: pattern,
+            scheduleCron: document.getElementById('scheduleCron').value,
+            maxRetryAttempts: parseInt(document.getElementById('maxRetry').value),
+            retryDelaySeconds: parseInt(document.getElementById('retryDelay').value),
+            executionTimeoutSeconds: 300
+        };
+
+        showResult('connectResult', '⏳ Создание интеграции...', 'info');
+
+        try {
+            const response = await fetch(`${API.subscription}/connect`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                showResult('connectResult', `Интеграция создана! Config ID: ${result.orchestrationConfigId}`, 'success');
+                loadConnections();
+            } else {
+                showResult('connectResult', `Ошибка: ${result.error}`, 'error');
+            }
+        } catch (error) {
+            showResult('connectResult', `Ошибка: ${error.message}`, 'error');
+        }
+    }
+
+    async function loadConnections() {
+        try {
+            const response = await fetch(`${API.subscription}/connections`);
+            const connections = await response.json();
+
+            const container = document.getElementById('connectionsList');
+            if (!connections || connections.length === 0) {
+                container.innerHTML = '<div class="interface-item">Нет активных подключений</div>';
+                return;
+            }
+
+            container.innerHTML = connections.map(conn => `
+                    <div class="interface-item">
+                        <div class="name">Config ID: ${conn.id}</div>
+                        <div class="type">
+                            Pattern: ${conn.integrationPattern} | Cron: ${conn.scheduleCron}
+                            <button onclick="deleteConnection(${conn.id})" class="danger" style="margin-left:10px; padding:5px 10px;">🗑 Удалить</button>
+                        </div>
+                    </div>
+                `).join('');
+        } catch (error) {
+            console.error('Error loading connections:', error);
+        }
+    }
+
+    async function deleteConnection(id) {
+        if (!confirm('Удалить подключение?')) return;
+
+        try {
+            await fetch(`${API.subscription}/connections/${id}`, { method: 'DELETE' });
+            loadConnections();
+        } catch (error) {
+            console.error('Error deleting connection:', error);
+        }
+    }
+
+    async function testApi() {
+        const message = document.getElementById('apiMessage').value;
+        showResult('testResult', '⏳ Отправка...', 'info');
+
+        try {
+            const response = await fetch('http://localhost:5100/api/source-data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: message
+            });
+            const result = await response.json();
+            showResult('testResult', `Отправлено! Ответ: ${JSON.stringify(result)}`, 'success');
+        } catch (error) {
+            showResult('testResult', `Ошибка: ${error.message}`, 'error');
+        }
+    }
+
+    async function testKafka() {
+        const message = document.getElementById('kafkaMessage').value;
+        const topic = document.getElementById('kafkaTopic').value;
+
+        showResult('testResult', 'Отправка в Kafka...', 'info');
+
+        try {
+            const response = await fetch(`http://localhost:5001/api/Publication/test-kafka?topic=${topic}`, {
+                method: 'POST'
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                showResult('testResult', `Сообщение отправлено в Kafka topic ${topic}! Offset: ${result.offset}`, 'success');
+            } else {
+                showResult('testResult', `Ошибка: ${result.error}`, 'error');
+            }
+        } catch (error) {
+            showResult('testResult', `Ошибка: ${error.message}`, 'error');
+        }
+    }
+
+    async function testDatabase() {
+        const sql = document.getElementById('sqlQuery').value;
+        showResult('testResult', 'Выполнение SQL...', 'info');
+        showResult('testResult', 'Database тесты требуют прямого доступа к PostgreSQL', 'error');
+    }
+
+    function showResult(elementId, message, type, isHtml = false) {
+        const element = document.getElementById(elementId);
+        element.className = `result ${type === 'success' ? 'success' : (type === 'error' ? 'error' : '')}`;
+        if (isHtml) {
+            element.innerHTML = message;
+        } else {
+            element.textContent = message;
+        }
+    }
+
+    async function checkStatus() {
+        const statusEl = document.getElementById('status');
+        try {
+            const response = await fetch('http://localhost:5001/api/Publication/test-connection');
+            if (response.ok) {
+                statusEl.className = 'status online';
+                statusEl.innerHTML = 'Все сервисы работают';
+            } else {
+                throw new Error('API not responding');
+            }
+        } catch (error) {
+            statusEl.className = 'status offline';
+            statusEl.innerHTML = 'Сервисы недоступны. Запустите docker-compose up -d';
+        }
+    }
+
+    checkStatus();
+    setInterval(checkStatus, 30000);
+    loadInterfacesForSelect();
+</script>
+</body>
+</html>

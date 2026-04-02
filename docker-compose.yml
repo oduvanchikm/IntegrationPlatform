@@ -371,6 +371,18 @@
       - connect
     networks:
       - app-network
+  
+  frontend:
+    build:
+      context: ./integration-platform-ui
+      dockerfile: Dockerfile
+    container_name: integration-frontend
+    ports:
+      - "8082:80"
+    networks:
+      - app-network
+        
+        
 
 networks:
   app-network:

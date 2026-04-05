@@ -4,6 +4,7 @@ using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
 using IntegrationPlatform.Subscription.API.DTO;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Prometheus;
 
 namespace IntegrationPlatform.Subscription.API.Controllers;
 
@@ -12,9 +13,29 @@ namespace IntegrationPlatform.Subscription.API.Controllers;
 public class InterfaceController(SubscriptionDbContext context, ILogger<InterfaceController> logger)
     : ControllerBase
 {
+    private static readonly Counter InterfacesCreated = Prometheus.Metrics
+        .CreateCounter("subscription_interfaces_created_total", 
+            "Total number of consumer interfaces created",
+            new CounterConfiguration { LabelNames = ["interface_type"] });
+    
+    private static readonly Gauge ActiveConsumerInterfaces = Prometheus.Metrics
+        .CreateGauge("subscription_active_consumer_interfaces", 
+            "Number of active consumer interfaces");
+    
+    private static readonly Counter ErrorsTotal = Prometheus.Metrics
+        .CreateCounter("subscription_interface_errors_total", 
+            "Total number of errors in interface controller",
+            new CounterConfiguration { LabelNames = ["error_type"] });
+    
+    private static readonly Histogram RequestDuration = Prometheus.Metrics
+        .CreateHistogram("subscription_interface_request_duration_seconds", 
+            "Duration of interface API requests",
+            new HistogramConfiguration { Buckets = [0.01, 0.05, 0.1, 0.5, 1, 2, 5] });
+    
     [HttpPost]
     public async Task<IActionResult> CreateConsumerInterface([FromBody] CreateConsumerInterfaceRequest request)
     {
+        using var timer = RequestDuration.NewTimer();
         try
         {
             logger.LogInformation("Received consumer interface request: {@Request}", request);
@@ -22,12 +43,14 @@ public class InterfaceController(SubscriptionDbContext context, ILogger<Interfac
             if (string.IsNullOrEmpty(request.ProductName))
             {
                 logger.LogWarning("ProductName is required");
+                ErrorsTotal.WithLabels("missing_product_name").Inc();
                 return BadRequest(new { Success = false, Error = "ProductName is required" });
             }
 
             if (string.IsNullOrEmpty(request.Name))
             {
                 logger.LogWarning("Interface Name is required");
+                ErrorsTotal.WithLabels("missing_product_name").Inc();
                 return BadRequest(new { Success = false, Error = "Interface Name is required" });
             }
 
@@ -100,6 +123,11 @@ public class InterfaceController(SubscriptionDbContext context, ILogger<Interfac
 
             context.DataInterfaces.Add(newInterface);
             await context.SaveChangesAsync();
+            
+            string typeLabel = request.InterfaceType.ToString().ToLower();
+            InterfacesCreated.WithLabels(typeLabel).Inc();
+            
+            ActiveConsumerInterfaces.Inc();
 
             logger.LogInformation("Consumer interface created successfully. ID: {InterfaceId}, Type: {InterfaceType}",
                 newInterface.Id, newInterface.InterfaceType);
@@ -116,6 +144,7 @@ public class InterfaceController(SubscriptionDbContext context, ILogger<Interfac
         catch (Exception ex)
         {
             logger.LogError(ex, "Error creating consumer interface: {ErrorMessage}", ex.Message);
+            ErrorsTotal.WithLabels("create_interface_exception").Inc();
             return StatusCode(500, new { Success = false, Error = ex.Message });
         }
     }
@@ -123,6 +152,7 @@ public class InterfaceController(SubscriptionDbContext context, ILogger<Interfac
     [HttpGet]
     public async Task<IActionResult> GetAllInterfaces()
     {
+        using var timer = RequestDuration.NewTimer();
         var interfaces = await context.DataInterfaces
             .Include(di => di.Product)
             .Select(di => new
@@ -153,12 +183,16 @@ public class InterfaceController(SubscriptionDbContext context, ILogger<Interfac
     [HttpGet("{id}")]
     public async Task<IActionResult> GetInterfaceById(int id)
     {
+        using var timer = RequestDuration.NewTimer();
         var interface_ = await context.DataInterfaces
             .Include(di => di.Product)
             .FirstOrDefaultAsync(di => di.Id == id);
 
         if (interface_ == null)
+        {
+            ErrorsTotal.WithLabels("interface_not_found").Inc();
             return NotFound(new { Success = false, Error = $"Consumer interface {id} not found" });
+        }
 
         var result = new
         {

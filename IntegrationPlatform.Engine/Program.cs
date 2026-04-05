@@ -59,4 +59,6 @@ var host = builder.Build();
 var metricServer = new MetricServer(port: 9091);
 metricServer.Start();
 
+Console.WriteLine("✅ Engine Metrics server started on http://0.0.0.0:9091/metrics");
+
 host.Run();

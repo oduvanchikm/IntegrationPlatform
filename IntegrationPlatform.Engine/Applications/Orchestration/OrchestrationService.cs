@@ -200,27 +200,27 @@ public class OrchestrationService(
                     logger.LogInformation("========== API TO KAFKA EXECUTION COMPLETE ==========");
                     break;
 
-                case "KafkaToApi":
-                    logger.LogInformation("========== EXECUTING KAFKA TO API ==========");
-                    logger.LogInformation("Creating KafkaToApiHandler");
-
-                    var kafkaToApiHandler = ActivatorUtilities.CreateInstance<KafkaToApiHandler>(serviceProvider);
-
-                    logger.LogInformation("Calling KafkaToApiHandler.ExecuteAsync");
-                    _ = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            await kafkaToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
-                        }
-                        catch (Exception e)
-                        {
-                            logger.LogError(e, "KafkaToApiHandler.ExecuteAsync failed");
-                        }
-                    });
-
-                    logger.LogInformation("========== KAFKA TO API EXECUTION COMPLETE ==========");
-                    break;
+                // case "KafkaToApi":
+                //     logger.LogInformation("========== EXECUTING KAFKA TO API ==========");
+                //     logger.LogInformation("Creating KafkaToApiHandler");
+                //
+                //     var kafkaToApiHandler = ActivatorUtilities.CreateInstance<KafkaToApiHandler>(serviceProvider);
+                //
+                //     logger.LogInformation("Calling KafkaToApiHandler.ExecuteAsync");
+                //     _ = Task.Run(async () =>
+                //     {
+                //         try
+                //         {
+                //             await kafkaToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                //         }
+                //         catch (Exception e)
+                //         {
+                //             logger.LogError(e, "KafkaToApiHandler.ExecuteAsync failed");
+                //         }
+                //     });
+                //
+                //     logger.LogInformation("========== KAFKA TO API EXECUTION COMPLETE ==========");
+                //     break;
 
                 case "KafkaToKafka":
                     logger.LogInformation("========== EXECUTING KAFKA TO KAFKA ==========");
@@ -376,6 +376,11 @@ public class OrchestrationService(
             case "ApiToKafka":
                 ApiToKafkaHandler.StopTask(sourceId, targetId);
                 break;
+
+            case "KafkaToKafka":
+                KafkaToKafkaHandler.StopTask(sourceId, targetId);
+                break;
+
 
             default:
                 break;

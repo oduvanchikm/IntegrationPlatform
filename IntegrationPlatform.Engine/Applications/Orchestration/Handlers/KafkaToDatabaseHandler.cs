@@ -28,7 +28,7 @@ public class KafkaToDatabaseHandler(
         logger.LogInformation("Target DB: {Host}:{Port}/{Database}.{Schema}",
             targetDb.Host, targetDb.Port, targetDb.DatabaseName, targetDb.Scheme);
 
-        await kafkaReader.StreamFromKafkaAsync(sourceKafka, async (message) =>
+        await kafkaReader.ReadFromKafkaAsync(sourceKafka, async (message) =>
         {
             logger.LogInformation("Received message from Kafka, writing to database");
             await databaseWriter.WriteToDatabaseAsync(targetDb, new List<string> { message });

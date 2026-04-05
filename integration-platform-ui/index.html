@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integration Platform | Управление интеграциями</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        h1 {
+            color: white;
+            font-size: 2rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 0%, #a0e9ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .badge-pro {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 12px;
+            color: #a0e9ff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 4px;
+        }
+
+        .tab {
+            background: rgba(255, 255, 255, 0.05);
+            color: #ccd6f6;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(4px);
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 25px 40px -12px rgba(0, 0, 0, 0.3);
+        }
+
+        .card h2 {
+            color: #1a202c;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 4px solid #667eea;
+            padding-left: 16px;
+        }
+
+        .card h3 {
+            color: #4a5568;
+            margin: 16px 0 12px 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #2d3748;
+            font-size: 13px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.2s;
+            background: #f7fafc;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button.danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        button.success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        button.outline {
+            background: transparent;
+            border: 1px solid #cbd5e0;
+            color: #4a5568;
+        }
+
+        button.outline:hover {
+            background: #edf2f7;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status.online {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status.offline {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .result {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .result.success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .result.error {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .interfaces-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .interface-item {
+            background: #f8f9fa;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #e2e8f0;
+        }
+
+        .interface-item:hover {
+            background: #e9ecef;
+            transform: translateX(4px);
+        }
+
+        .interface-item .name {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .interface-item .type {
+            font-size: 11px;
+            color: #718096;
+            margin-top: 4px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        .badge.db { background: #48bb78; color: white; }
+        .badge.api { background: #4299e1; color: white; }
+        .badge.kafka { background: #ed8936; color: white; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>⚡ Integration Platform</h1>
+        <div class="badge-pro">Управление интеграциями</div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('publish')">Публикация интерфейса</button>
+        <button class="tab" onclick="showTab('search')">Каталог интерфейсов</button>
+        <button class="tab" onclick="showTab('connect')">Оркестрация интеграций</button>
+        <button class="tab" onclick="showTab('connections')">Активные потоки</button>
+    </div>
+
+    <div id="tab-publish" class="tab-content">
+        <div class="dashboard">
+            <div class="card">
+                <h2>📋 Регистрация нового интерфейса</h2>
+                <form id="publishForm">
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Название интерфейса *</label>
+                            <input type="text" id="interfaceName" placeholder="e.g., CustomerAPI" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Продукт-владелец *</label>
+                            <input type="text" id="productName" placeholder="Product Owner" required>
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Тип интерфейса</label>
+                            <select id="interfaceType">
+                                <option value="2">API</option>
+                                <option value="1">Kafka</option>
+                                <option value="0">Database</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Роль</label>
+                            <select id="productType">
+                                <option value="1">Source (Провайдер)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Описание</label>
+                        <textarea id="description" rows="2" placeholder="Business context, data shape, SLA..."></textarea>
+                    </div>
+
+                    <div id="apiFields">
+                        <h3>REST API Endpoint</h3>
+                        <div class="grid-2">
+                            <div class="form-group"><label>Host</label><input type="text" id="host" placeholder="http://mock-api-source"></div>
+                            <div class="form-group"><label>Port</label><input type="text" id="port" placeholder="8080"></div>
+                            <div class="form-group"><label>Endpoint</label><input type="text" id="endpoint" placeholder="/api/source-data"></div>
+                            <div class="form-group"><label>Token (opt)</label><input type="text" id="token" placeholder="Bearer token"></div>
+                        </div>
+                    </div>
+
+                    <div id="kafkaFields" style="display:none;">
+                        <h3>Kafka Configuration</h3>
+                        <div class="grid-2">
+                            <div class="form-group"><label>Bootstrap Servers</label><input type="text" id="bootstrapServers" placeholder="kafka2:9092"></div>
+                            <div class="form-group"><label>Topic Name</label><input type="text" id="topicName" placeholder="source-topic"></div>
+                        </div>
+                    </div>
+
+                    <div id="dbFields" style="display:none;">
+                        <h3>Database Connection</h3>
+                        <div class="grid-2">
+                            <div class="form-group"><label>Host</label><input type="text" id="dbHost" placeholder="postgres-source"></div>
+                            <div class="form-group"><label>Port</label><input type="text" id="dbPort" placeholder="5432"></div>
+                            <div class="form-group"><label>Database</label><input type="text" id="databaseName" placeholder="source_db"></div>
+                            <div class="form-group"><label>Schema</label><input type="text" id="schema" placeholder="source"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group"><label>Username</label><input type="text" id="username" value="admin"></div>
+                        <div class="form-group"><label>Password</label><input type="password" id="password" value="password"></div>
+                    </div>
+
+                    <button type="submit">Зарегистрировать интерфейс</button>
+                </form>
+                <div id="publishResult" class="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-search" class="tab-content hidden">
+        <div class="dashboard">
+            <div class="card">
+                <h2>Поиск интерфейсов</h2>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>По продукту</label>
+                        <input type="text" id="searchProduct" placeholder="Название продукта">
+                        <button onclick="searchByProduct()" style="margin-top:8px;">Искать</button>
+                    </div>
+                    <div class="form-group">
+                        <label>По интерфейсу</label>
+                        <input type="text" id="searchInterface" placeholder="Название интерфейса">
+                        <button onclick="searchByInterface()" style="margin-top:8px;">Искать</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Фильтр по типу</label>
+                    <select id="filterType">
+                        <option value="">Все</option>
+                        <option value="0">Database</option>
+                        <option value="1">Kafka</option>
+                        <option value="2">API</option>
+                    </select>
+                    <button onclick="searchByType()" style="margin-top:8px;">Фильтр</button>
+                </div>
+                <button onclick="searchAll()" class="success">Показать каталог</button>
+                <div id="searchResults" class="interfaces-list" style="margin-top:20px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-connect" class="tab-content hidden">
+        <div class="dashboard">
+            <div class="card">
+                <h2>Создание интеграции</h2>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Источник (Source)</label>
+                        <select id="sourceInterface"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Получатель (Target)</label>
+                        <select id="targetInterface"></select>
+                    </div>
+                </div>
+
+                <div id="patternPreview" style="background: #f0f4f8; border-radius: 12px; padding: 12px; margin: 16px 0;">
+                    <div style="font-size: 12px; color: #4a5568; margin-bottom: 8px;">Определённый паттерн интеграции:</div>
+                    <div id="selectedPattern" style="font-weight: bold; font-size: 14px;">— Не выбран —</div>
+                </div>
+
+                <div id="scheduleBlock" style="background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%); border-radius: 16px; padding: 16px; margin: 16px 0;">
+                    <div style="font-weight: bold; margin-bottom: 12px;">Как часто синхронизировать данные?</div>
+
+                    <div class="form-group">
+                        <label>Режим</label>
+                        <select id="syncMode" onchange="updateCronPreview()">
+                            <option value="once">⚡ Единоразово (сразу после создания)</option>
+                            <option value="everyMinute">Каждую минуту</option>
+                            <option value="every5Minutes" selected>Каждые 5 минут</option>
+                            <option value="every15Minutes">Каждые 15 минут</option>
+                            <option value="everyHour">Каждый час</option>
+                            <option value="everyDay">Каждый день в 00:00</option>
+                            <option value="custom">Своё расписание</option>
+                        </select>
+                    </div>
+
+                    <div id="customCronBlock" style="display: none;">
+                        <div class="form-group">
+                            <label>Cron-выражение</label>
+                            <input type="text" id="customCron" placeholder="*/10 * * * *" value="*/10 * * * *">
+                            <small>Примеры: */10 * * * * (каждые 10 мин), 0 9 * * * (каждый день в 9 утра)</small>
+                        </div>
+                    </div>
+
+                    <div id="cronPreview" style="margin-top: 12px; padding: 8px 12px; background: white; border-radius: 8px; font-family: monospace; font-size: 12px;">
+                        Каждые 5 минут<br><code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">*/5 * * * *</code>
+                    </div>
+                </div>
+
+                <button onclick="createConnection()" style="width: 100%; padding: 14px; font-size: 16px;">Развернуть интеграцию</button>
+                <div id="connectResult" class="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-connections" class="tab-content hidden">
+        <div class="dashboard">
+            <div class="card">
+                <h2>Активные подключения</h2>
+                <button onclick="loadConnections()" class="success" style="margin-bottom:16px;">Обновить</button>
+                <div id="connectionsList" style="max-height:500px; overflow-y:auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div style="background:rgba(255,255,255,0.95); border-radius:16px; padding:12px 20px; margin-top:24px; text-align:center;">
+        <span id="status" class="status">Проверка соединения...</span>
+    </div>
+</div>
+
+<script>
+    const API = {
+        publication: 'http://localhost:5001/api/Publication',
+        search: 'http://localhost:5002/api/Search/interfaces',
+        subscription: 'http://localhost:5003/api/Subscription'
+    };
+
+    let allInterfaces = [];
+
+    function showTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+        document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        event.target.classList.add('active');
+
+        if (tabName === 'connect') {
+            loadInterfacesForSelect();
+            setTimeout(() => {
+                if (document.getElementById('sourceInterface').value && document.getElementById('targetInterface').value) {
+                    updatePatternPreview();
+                }
+            }, 500);
+        }
+        if (tabName === 'connections') loadConnections();
+        if (tabName === 'search') searchAll();
+    }
+
+    function showResult(elementId, message, type) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        el.className = `result ${type === 'success' ? 'success' : (type === 'error' ? 'error' : 'info')}`;
+        el.textContent = message;
+        setTimeout(() => {
+            if (el) el.className = 'result';
+        }, 5000);
+    }
+
+    document.getElementById('interfaceType')?.addEventListener('change', function () {
+        const type = parseInt(this.value);
+        document.getElementById('apiFields').style.display = type === 2 ? 'block' : 'none';
+        document.getElementById('kafkaFields').style.display = type === 1 ? 'block' : 'none';
+        document.getElementById('dbFields').style.display = type === 0 ? 'block' : 'none';
+    });
+
+    document.getElementById('publishForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const type = parseInt(document.getElementById('interfaceType').value);
+        const data = {
+            name: document.getElementById('interfaceName').value,
+            productName: document.getElementById('productName').value,
+            interfaceType: type,
+            description: document.getElementById('description').value,
+            productType: parseInt(document.getElementById('productType').value),
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value
+        };
+        if (type === 2) {
+            data.host = document.getElementById('host').value;
+            data.port = document.getElementById('port').value;
+            data.endpoint = document.getElementById('endpoint').value;
+            data.token = document.getElementById('token').value;
+        } else if (type === 1) {
+            data.bootstrapServers = document.getElementById('bootstrapServers').value;
+            data.topicName = document.getElementById('topicName').value;
+        } else if (type === 0) {
+            data.host = document.getElementById('dbHost').value;
+            data.port = document.getElementById('dbPort').value;
+            data.databaseName = document.getElementById('databaseName').value;
+            data.scheme = document.getElementById('schema').value;
+        }
+        try {
+            const response = await fetch(`${API.publication}/interfaces`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (result.success) showResult('publishResult', `Интерфейс опубликован! ID: ${result.interfaceId}`, 'success');
+            else showResult('publishResult', `Ошибка: ${result.error}`, 'error');
+        } catch (error) {
+            showResult('publishResult', `${error.message}`, 'error');
+        }
+    });
+
+    async function searchByProduct() {
+        const name = document.getElementById('searchProduct').value;
+        if (!name) return;
+        const resp = await fetch(`${API.search}/by-product?productName=${encodeURIComponent(name)}`);
+        displaySearchResults(await resp.json());
+    }
+
+    async function searchByInterface() {
+        const name = document.getElementById('searchInterface').value;
+        if (!name) return;
+        const resp = await fetch(`${API.search}/by-interface?interfaceName=${encodeURIComponent(name)}`);
+        displaySearchResults(await resp.json());
+    }
+
+    async function searchByType() {
+        const type = document.getElementById('filterType').value;
+        if (type === '') return;
+        const resp = await fetch(`${API.search}/by-type?interfaceType=${type}`);
+        displaySearchResults(await resp.json());
+    }
+
+    async function searchAll() {
+        const resp = await fetch(`${API.search}/by-product?productName=`);
+        displaySearchResults(await resp.json());
+    }
+
+    function displaySearchResults(results) {
+        const container = document.getElementById('searchResults');
+        if (!results?.length) {
+            container.innerHTML = '<div class="interface-item">🔍 Интерфейсы не найдены</div>';
+            return;
+        }
+        container.innerHTML = results.map(item => `
+            <div class="interface-item" onclick="showInterfaceDetails(${item.id})">
+                <div class="name">${item.name}</div>
+                <div class="type">
+                    Продукт: ${item.productName} | ID: ${item.id}
+                    <span class="badge ${item.interfaceType === 2 ? 'api' : (item.interfaceType === 1 ? 'kafka' : 'db')}">
+                        ${item.interfaceType === 2 ? 'API' : (item.interfaceType === 1 ? 'Kafka' : 'DB')}
+                    </span>
+                </div>
+            </div>
+        `).join('');
+        allInterfaces = results;
+    }
+
+    async function showInterfaceDetails(id) {
+        try {
+            const resp = await fetch(`${API.search}/by-id/${id}`);
+            const data = await resp.json();
+            let details = `${data.name}\n`;
+            details += `Тип: ${data.interfaceType === 'Db' ? 'PostgreSQL' : (data.interfaceType === 'Kafka' ? 'Kafka' : 'API')}\n`;
+            details += `Статус: ${data.status}\n`;
+            details += `Продукт: ${data.productName}\n`;
+            if (data.host) details += `Host: ${data.host}:${data.port}\n`;
+            if (data.endpoint) details += `Endpoint: ${data.endpoint}\n`;
+            if (data.topicName) details += `Topic: ${data.topicName}\n`;
+            if (data.databaseName) details += `Database: ${data.databaseName}.${data.scheme}\n`;
+            alert(details);
+        } catch(e) {
+            alert('Не удалось загрузить детали интерфейса');
+        }
+    }
+
+    async function loadInterfacesForSelect() {
+        const sourceResp = await fetch(`${API.search}/by-product?productName=`), source = await sourceResp.json();
+        let target = source;
+        try {
+            const targetResp = await fetch(`${API.subscription}/interfaces`);
+            if (targetResp.ok) target = await targetResp.json();
+        } catch (e) {}
+        const sourceSel = document.getElementById('sourceInterface'),
+            targetSel = document.getElementById('targetInterface');
+        sourceSel.innerHTML = '<option value="">— Выберите источник —</option>';
+        targetSel.innerHTML = '<option value="">— Выберите получателя —</option>';
+        source.forEach(i => sourceSel.innerHTML += `<option value="${i.id}">[${i.interfaceType === 2 ? 'API' : (i.interfaceType === 1 ? 'Kafka' : 'DB')}] ${i.name} (${i.productName})</option>`);
+        target.forEach(i => targetSel.innerHTML += `<option value="${i.id}">[${i.interfaceType === 2 ? 'API' : (i.interfaceType === 1 ? 'Kafka' : 'DB')}] ${i.name} (${i.productName || 'Unknown'})</option>`);
+    }
+
+    async function updatePatternPreview() {
+        const sourceId = document.getElementById('sourceInterface').value;
+        const targetId = document.getElementById('targetInterface').value;
+
+        if (!sourceId || !targetId) {
+            document.getElementById('selectedPattern').innerHTML = '— Выберите источник и получатель —';
+            return;
+        }
+
+        try {
+            const sourceResp = await fetch(`${API.search}/by-id/${sourceId}`);
+            const targetResp = await fetch(`${API.subscription}/interfaces/${targetId}`);
+
+            if (!sourceResp.ok || !targetResp.ok) {
+                document.getElementById('selectedPattern').innerHTML = 'Не удалось определить типы интерфейсов';
+                return;
+            }
+
+            const source = await sourceResp.json();
+            const target = await targetResp.json();
+
+            const sourceType = source.interfaceTypeCode ?? (source.interfaceType === 'Db' ? 0 : (source.interfaceType === 'Kafka' ? 1 : 2));
+            const targetType = target.interfaceTypeCode ?? (target.interfaceType === 'Db' ? 0 : (target.interfaceType === 'Kafka' ? 1 : 2));
+
+            const sourceTypeName = sourceType === 0 ? 'Database' : (sourceType === 1 ? 'Kafka' : 'API');
+            const targetTypeName = targetType === 0 ? 'Database' : (targetType === 1 ? 'Kafka' : 'API');
+
+            let patternCode = -1;
+            let patternName = '';
+
+            if (sourceType === 0 && targetType === 0) { patternCode = 0; patternName = 'Database → Database'; }
+            else if (sourceType === 0 && targetType === 2) { patternCode = 1; patternName = 'Database → API'; }
+            else if (sourceType === 0 && targetType === 1) { patternCode = 2; patternName = 'Database → Kafka'; }
+            else if (sourceType === 2 && targetType === 0) { patternCode = 3; patternName = 'API → Database'; }
+            else if (sourceType === 2 && targetType === 1) { patternCode = 4; patternName = 'API → Kafka'; }
+            else if (sourceType === 2 && targetType === 2) { patternCode = 5; patternName = 'API → API'; }
+            else if (sourceType === 1 && targetType === 0) { patternCode = 6; patternName = 'Kafka → Database'; }
+            else if (sourceType === 1 && targetType === 2) { patternCode = 7; patternName = 'Kafka → API'; }
+            else if (sourceType === 1 && targetType === 1) { patternCode = 8; patternName = 'Kafka → Kafka'; }
+
+            window.selectedPatternCode = patternCode;
+
+            document.getElementById('selectedPattern').innerHTML = `
+                <span style="background: #667eea; color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px;">
+                    ${patternName}
+                </span>
+                <span style="margin-left: 8px; font-size: 12px; color: #4a5568;">
+                    (${sourceTypeName} → ${targetTypeName})
+                </span>
+            `;
+        } catch (error) {
+            console.error('Error determining pattern:', error);
+            document.getElementById('selectedPattern').innerHTML = 'Ошибка определения паттерна';
+        }
+    }
+
+    async function checkSourceTypeAndToggleSchedule() {
+        const sourceId = document.getElementById('sourceInterface').value;
+        const scheduleBlock = document.getElementById('scheduleBlock');
+
+        if (!sourceId) {
+            if (scheduleBlock) scheduleBlock.style.display = 'block';
+            return;
+        }
+
+        try {
+            const sourceResp = await fetch(`${API.search}/by-id/${sourceId}`);
+            const source = await sourceResp.json();
+            const sourceType = source.interfaceTypeCode ?? (source.interfaceType === 'Db' ? 0 : (source.interfaceType === 'Kafka' ? 1 : 2));
+
+            if (sourceType === 1) {
+                if (scheduleBlock) scheduleBlock.style.display = 'none';
+                document.getElementById('syncMode').value = 'once';
+            } else {
+                if (scheduleBlock) scheduleBlock.style.display = 'block';
+            }
+        } catch (e) {
+            console.error('Error checking source type:', e);
+            if (scheduleBlock) scheduleBlock.style.display = 'block';
+        }
+    }
+
+    async function createConnection() {
+        const sourceId = document.getElementById('sourceInterface').value;
+        const targetId = document.getElementById('targetInterface').value;
+
+        if (!sourceId || !targetId) {
+            showResult('connectResult', 'Выберите источник и получателя', 'error');
+            return;
+        }
+
+        if (window.selectedPatternCode === undefined || window.selectedPatternCode === -1) {
+            showResult('connectResult', 'Не удалось определить паттерн интеграции', 'error');
+            return;
+        }
+
+        let sourceType = null;
+        try {
+            const sourceResp = await fetch(`${API.search}/by-id/${sourceId}`);
+            const source = await sourceResp.json();
+            sourceType = source.interfaceTypeCode ?? (source.interfaceType === 'Db' ? 0 : (source.interfaceType === 'Kafka' ? 1 : 2));
+        } catch(e) {}
+
+        let cronExpression = '';
+        const mode = document.getElementById('syncMode').value;
+
+        if (sourceType === 1) {
+            cronExpression = '* * * * *';
+        } else {
+            switch (mode) {
+                case 'once': cronExpression = '* * * * *'; break;
+                case 'everyMinute': cronExpression = '* * * * *'; break;
+                case 'every5Minutes': cronExpression = '*/5 * * * *'; break;
+                case 'every15Minutes': cronExpression = '*/15 * * * *'; break;
+                case 'everyHour': cronExpression = '0 * * * *'; break;
+                case 'everyDay': cronExpression = '0 0 * * *'; break;
+                case 'custom': cronExpression = document.getElementById('customCron').value; break;
+                default: cronExpression = '*/5 * * * *';
+            }
+        }
+
+        const data = {
+            publicationInterfaceId: parseInt(sourceId),
+            subscriptionInterfaceId: parseInt(targetId),
+            integrationPattern: window.selectedPatternCode,
+            scheduleCron: cronExpression,
+            maxRetryAttempts: 3,
+            retryDelaySeconds: 30,
+            executionTimeoutSeconds: 300
+        };
+
+        showResult('connectResult', '⏳ Создание интеграции...', 'info');
+
+        try {
+            const resp = await fetch(`${API.subscription}/connect`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            const result = await resp.json();
+
+            if (result.success) {
+                showResult('connectResult', `Интеграция развёрнута! Config ID: ${result.orchestrationConfigId}`, 'success');
+                loadConnections();
+            } else {
+                showResult('connectResult', `Ошибка: ${result.error || JSON.stringify(result)}`, 'error');
+            }
+        } catch (e) {
+            showResult('connectResult', `Ошибка соединения: ${e.message}`, 'error');
+        }
+    }
+
+    async function loadConnections() {
+        try {
+            const resp = await fetch(`${API.subscription}/connections`), conns = await resp.json();
+            const container = document.getElementById('connectionsList');
+            if (!conns?.length) {
+                container.innerHTML = '<div class="interface-item">Нет активных интеграций</div>';
+                return;
+            }
+            container.innerHTML = conns.map(c => `
+                <div class="interface-item">
+                    <div class="name">🔗 Config ID: ${c.id}</div>
+                    <div class="type">
+                        Паттерн: ${c.integrationPattern} | Расписание: ${c.scheduleCron}
+                        <button onclick="deleteConnection(${c.id})" class="danger" style="margin-left:10px; padding:5px 10px;">🗑 Удалить</button>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function deleteConnection(id) {
+        if (confirm('Удалить интеграцию?')) {
+            await fetch(`${API.subscription}/connections/${id}`, {method: 'DELETE'});
+            loadConnections();
+            showResult('connectResult', 'Интеграция удалена', 'success');
+        }
+    }
+
+    function updateCronPreview() {
+        const mode = document.getElementById('syncMode').value;
+        const customCronInput = document.getElementById('customCron');
+        const customBlock = document.getElementById('customCronBlock');
+        let cronExpression = '';
+        let humanReadable = '';
+
+        switch (mode) {
+            case 'once': cronExpression = '* * * * *'; humanReadable = '⚡ Единоразово'; customBlock.style.display = 'none'; break;
+            case 'everyMinute': cronExpression = '* * * * *'; humanReadable = 'Каждую минуту'; customBlock.style.display = 'none'; break;
+            case 'every5Minutes': cronExpression = '*/5 * * * *'; humanReadable = 'Каждые 5 минут'; customBlock.style.display = 'none'; break;
+            case 'every15Minutes': cronExpression = '*/15 * * * *'; humanReadable = 'Каждые 15 минут'; customBlock.style.display = 'none'; break;
+            case 'everyHour': cronExpression = '0 * * * *'; humanReadable = 'Каждый час'; customBlock.style.display = 'none'; break;
+            case 'everyDay': cronExpression = '0 0 * * *'; humanReadable = 'Каждый день в полночь'; customBlock.style.display = 'none'; break;
+            case 'custom': customBlock.style.display = 'block'; cronExpression = customCronInput.value; humanReadable = `Пользовательское: ${cronExpression}`; break;
+            default: cronExpression = '*/5 * * * *'; humanReadable = 'Каждые 5 минут';
+        }
+
+        document.getElementById('cronPreview').innerHTML = `${humanReadable}<br><code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">${cronExpression}</code>`;
+    }
+    
+    async function checkStatus() {
+        const statusEl = document.getElementById('status');
+        try {
+            const resp = await fetch('http://localhost:5001/api/Publication/test-connection');
+            if (resp.ok) {
+                statusEl.className = 'status online';
+                statusEl.innerHTML = 'Все сервисы работают | Data Mesh Active';
+            } else throw new Error();
+        } catch (e) {
+            statusEl.className = 'status offline';
+            statusEl.innerHTML = 'Сервисы недоступны — запустите docker-compose up -d';
+        }
+    }
+
+    document.getElementById('sourceInterface')?.addEventListener('change', function() {
+        checkSourceTypeAndToggleSchedule();
+        updatePatternPreview();
+    });
+    document.getElementById('targetInterface')?.addEventListener('change', function() {
+        updatePatternPreview();
+    });
+
+    checkStatus();
+    setInterval(checkStatus, 30000);
+    loadInterfacesForSelect();
+</script>
+</body>
+</html>

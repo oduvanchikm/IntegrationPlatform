@@ -4,10 +4,17 @@ global:
 
 scrape_configs:
   - job_name: 'integration-platform'
+    scrape_interval: 5s
     static_configs:
       - targets:
           - 'publication-api:8080'
           - 'subscription-api:8080'
           - 'search-api:8080'
-          - 'integration-engine:8080'
+          - 'integration-engine:9091'
+          - 'node_exporter:9100'
+          - 'cadvisor:8080'
     metrics_path: /metrics
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

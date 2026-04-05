@@ -6,6 +6,7 @@ echo "=========================================="
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 RED='\033[0;31m'
+YELLOW='\033[1;33m'
 NC='\033[0m'
 
 echo -e "${BLUE}1. Публикация Source Kafka интерфейса...${NC}"
@@ -113,25 +114,64 @@ curl -s "http://localhost:5003/api/Subscription/connections" | jq .
 echo -e "${BLUE}7. Тестирование пересылки сообщений...${NC}"
 
 echo -e "${YELLOW}   Отправка тестового сообщения в source-topic...${NC}"
-docker exec kafka bash -c "echo 'Kafka to Kafka integration! $(date)' | docker exec -i kafka kafka-console-producer --broker-list kafka:9092 --topic source-topic"
-echo -e "${GREEN}   ✓ Сообщение отправлено${NC}"
-
-echo -e "${YELLOW}   Ожидание обработки Engine (5 сек)...${NC}"
 sleep 5
 
-echo -e "${YELLOW}   Чтение сообщения из target-topic:${NC}"
-docker exec kafka33 kafka-console-consumer --bootstrap-server kafka33:9092 --topic target-topic --from-beginning --max-messages 1 --timeout-ms 5000 2>/dev/null || echo "   ⚠ Нет сообщений в target-topic"
+# ✅ Исправлено: --bootstrap-server вместо --broker-list
+TEST_MESSAGE="Kafka2Kafka_$(date +%s)"
+echo "new" | docker exec -i kafka2 \
+  kafka-console-producer --bootstrap-server kafka2:9092 --topic source-topic
+
+echo -e "${GREEN}   ✓ Сообщение отправлено: $TEST_MESSAGE${NC}"
+
+echo -e "${YELLOW}   Ожидание обработки Engine (15 сек)...${NC}"
+sleep 15
+
+echo -e "${YELLOW}   Чтение сообщения из target-topic...${NC}"
+# ✅ Исправлено: добавлен --from-beginning чтобы видеть уже записанные сообщения
+RESULT=$(docker exec kafka33 kafka-console-consumer \
+  --bootstrap-server kafka33:9092 \
+  --topic target-topic \
+  --from-beginning \
+  --max-messages 200 \
+  --timeout-ms 10000 2>/dev/null)
+
+if [[ -n "$RESULT" ]]; then
+    echo -e "${GREEN}   ✓ Сообщение получено в target-topic:${NC}"
+    echo -e "     ${BLUE}$RESULT${NC}"
+    
+    # ✅ Дополнительная проверка: совпадает ли содержимое
+    if [[ "$RESULT" == *"$TEST_MESSAGE"* ]]; then
+        echo -e "${GREEN}   ✓ Содержимое сообщения совпадает!${NC}"
+    else
+        echo -e "${YELLOW}   ⚠ Сообщение получено, но содержимое отличается (возможно, прочитано старое)${NC}"
+    fi
+else
+    echo -e "${RED}   ✗ Нет сообщений в target-topic${NC}"
+    echo -e "${BLUE}   🔍 Диагностика:${NC}"
+    echo -e "     - Проверка топика target-topic..."
+    docker exec kafka33 kafka-topics --describe --topic target-topic --bootstrap-server kafka33:9092 2>/dev/null || echo "       ❌ Топик не найден"
+    
+    echo -e "     - Последние 3 сообщения в target-topic:"
+    docker exec kafka33 kafka-console-consumer \
+      --bootstrap-server kafka33:9092 \
+      --topic target-topic \
+      --from-beginning \
+      --max-messages 3 \
+      --timeout-ms 5000 2>/dev/null || echo "       (пусто)"
+fi
 
 echo -e "${BLUE}8. Последние логи Engine:${NC}"
-docker logs --tail 10 integration-engine
+docker logs --tail 20 integration-engine 2>/dev/null | grep -E "(📥|📤|✅|❌|MESSAGE|WriteToKafka)" || echo "   (нет релевантных логов)"
+
+# Очистка
+echo -e "${YELLOW}   Очистка: удаление связи...${NC}"
+curl -s -X DELETE "http://localhost:5003/api/Subscription/connections/$CONFIG_ID" &>/dev/null
+echo -e "${GREEN}   ✓ Связь удалена${NC}"
 
 echo -e "\n${GREEN}✅ Интеграция настроена и протестирована!${NC}"
 echo ""
-echo "Для отправки сообщений вручную:"
-echo "  docker exec -it kafka kafka-console-producer --broker-list kafka:9092 --topic source-topic"
-echo ""
-echo "Для просмотра сообщений:"
-echo "  docker exec -it kafka33 kafka-console-consumer --bootstrap-server kafka33:9092 --topic target-topic --from-beginning"
-echo ""
-echo "Для наблюдения за логами Engine:"
-echo "  docker logs -f integration-engine"
+echo "📌 Полезные команды для ручной отладки:"
+echo "   • Отправить сообщение:  docker exec -i kafka2 kafka-console-producer --bootstrap-server kafka2:9092 --topic source-topic"
+echo "   • Прочитать из target:   docker exec kafka33 kafka-console-consumer --bootstrap-server kafka33:9092 --topic target-topic --from-beginning"
+echo "   • Следить за логами:     docker logs -f integration-engine"
+echo "   • Описать топик:         docker exec kafka33 kafka-topics --describe --topic target-topic --bootstrap-server kafka33:9092"

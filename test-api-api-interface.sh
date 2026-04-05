@@ -99,7 +99,7 @@ fi
 TARGET_RESPONSE=$(curl -s -X POST http://localhost:5003/api/Interface \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Target API Interface",
+    "name": "52Target API Interface",
     "productName": "APITargetProduct",
     "interfaceType": 2,
     "description": "Target REST API for testing",

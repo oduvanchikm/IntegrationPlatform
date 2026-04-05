@@ -20,7 +20,7 @@ public class KafkaToKafkaHandler(
 
         await kafkaReader.ReadFromKafkaAsync(source, async (message) =>
         {
-            logger.LogInformation("📩 MESSAGE RECEIVED from {Topic}: {Preview}",
+            logger.LogInformation("MESSAGE RECEIVED from {Topic}: {Preview}",
                 source.TopicName,
                 message.Length > 100 ? message[..100] + "..." : message);
             

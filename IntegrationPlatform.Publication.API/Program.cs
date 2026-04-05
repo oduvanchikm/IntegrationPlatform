@@ -1,4 +1,5 @@
 using IntegrationPlatform.Publication.API.Interfaces;
+using IntegrationPlatform.Publication.API.Metrics;
 using IntegrationPlatform.Publication.API.Services;
 using IntegrationPlatform.Publication.DataAccess;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
@@ -39,7 +40,27 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<PublicationDbContext>();
     dbContext.Database.EnsureCreated();
+
+    UpdatePublicationMetrics(dbContext);
 }
+
+_ = Task.Run(async () =>
+{
+    while (true)
+    {
+        await Task.Delay(30000);
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<PublicationDbContext>();
+            UpdatePublicationMetrics(dbContext);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating metrics: {ex.Message}");
+        }
+    }
+});
 
 app.UseSwagger();
 app.UseSwaggerUI();
@@ -58,6 +79,37 @@ app.MapGet("/", () => Results.Redirect("/index.html"));
 app.Urls.Add("http://0.0.0.0:8080");
 
 app.UseHttpMetrics();
-app.UseMetricServer();
+app.MapMetrics();
 
 app.Run();
+
+void UpdatePublicationMetrics(PublicationDbContext dbContext)
+{
+    var totalProducts = dbContext.Products.Count();
+    var totalInterfaces = dbContext.DataInterfaces.Count();
+    var activeInterfaces =
+        dbContext.DataInterfaces.Count(d => d.Status == IntegrationPlatform.Common.Enums.ConnectionStatus.Active);
+    var draftInterfaces =
+        dbContext.DataInterfaces.Count(d => d.Status == IntegrationPlatform.Common.Enums.ConnectionStatus.Draft);
+    var deprecatedInterfaces =
+        dbContext.DataInterfaces.Count(d => d.Status == IntegrationPlatform.Common.Enums.ConnectionStatus.Deprecated);
+
+    var apiInterfaces =
+        dbContext.DataInterfaces.Count(d => d.InterfaceType == IntegrationPlatform.Common.Enums.InterfaceType.Api);
+    var kafkaInterfaces =
+        dbContext.DataInterfaces.Count(d => d.InterfaceType == IntegrationPlatform.Common.Enums.InterfaceType.Kafka);
+    var databaseInterfaces =
+        dbContext.DataInterfaces.Count(d => d.InterfaceType == IntegrationPlatform.Common.Enums.InterfaceType.Db);
+
+    PublicationMetrics.TotalProducts.Set(totalProducts);
+    PublicationMetrics.TotalInterfaces.Set(totalInterfaces);
+    PublicationMetrics.ActiveSourceInterfaces.Set(activeInterfaces);
+    PublicationMetrics.DraftInterfaces.Set(draftInterfaces);
+    PublicationMetrics.DeprecatedInterfaces.Set(deprecatedInterfaces);
+    PublicationMetrics.ApiInterfaces.Set(apiInterfaces);
+    PublicationMetrics.KafkaInterfaces.Set(kafkaInterfaces);
+    PublicationMetrics.DatabaseInterfaces.Set(databaseInterfaces);
+
+    Console.WriteLine(
+        $"Publication Metrics updated: Products={totalProducts}, Interfaces={totalInterfaces}, Active={activeInterfaces}");
+}

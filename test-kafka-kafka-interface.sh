@@ -118,7 +118,7 @@ sleep 5
 
 # ✅ Исправлено: --bootstrap-server вместо --broker-list
 TEST_MESSAGE="Kafka2Kafka_$(date +%s)"
-echo "$TEST_MESSAGE" | docker exec -i kafka2 \
+echo "new" | docker exec -i kafka2 \
   kafka-console-producer --bootstrap-server kafka2:9092 --topic source-topic
 
 echo -e "${GREEN}   ✓ Сообщение отправлено: $TEST_MESSAGE${NC}"

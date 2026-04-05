@@ -2,6 +2,7 @@ using System.Text.Json;
 using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Engine.Applications.Interfaces;
 using IntegrationPlatform.Engine.Applications.Orchestration;
+using IntegrationPlatform.Engine.Metrics;
 using Prometheus;
 
 namespace IntegrationPlatform.Engine.Applications.Kafka;
@@ -11,7 +12,7 @@ public class KafkaMessageHandler(
     ILogger<KafkaMessageHandler> logger)
     : IKafkaMessageHandler
 {
-    private static readonly Counter MessagesProcessed = Metrics
+    private static readonly Counter MessagesProcessed = Prometheus.Metrics
         .CreateCounter("engine_messages_processed_total",
             "Total messages processed by Engine",
             new CounterConfiguration
@@ -19,7 +20,7 @@ public class KafkaMessageHandler(
                 LabelNames = new[] { "pattern" }
             });
 
-    private static readonly Histogram ProcessingTime = Metrics
+    private static readonly Histogram ProcessingTime = Prometheus.Metrics
         .CreateHistogram("engine_processing_seconds",
             "Processing time in seconds",
             new HistogramConfiguration
@@ -63,11 +64,13 @@ public class KafkaMessageHandler(
 
                     logger.LogInformation(
                         "Calling OrchestrationService.HandleNewOrchestration for config {ConfigId}", config.Id);
-                    using (ProcessingTime.WithLabels(config.IntegrationPattern).NewTimer())
+                    using (EngineMetrics.ProcessingDuration.WithLabels(config.IntegrationPattern).NewTimer())
                     {
                         await orchestrationService.HandleNewOrchestration(config);
-                        MessagesProcessed.WithLabels(config.IntegrationPattern).Inc();
+                        
+                        EngineMetrics.EventsProcessed.WithLabels(config.IntegrationPattern).Inc();
                     }
+
 
                     logger.LogInformation("SUCCESS: Completed processing config {ConfigId}", config.Id);
                 }
@@ -75,21 +78,26 @@ public class KafkaMessageHandler(
                 {
                     logger.LogError("FAILED: Could not deserialize OrchestrationConfig from payload");
                     logger.LogError("Payload was: {Payload}", payload.ToString());
+                    EngineMetrics.ProcessingErrors.WithLabels("unknown", "deserialization_failed").Inc();
                 }
             }
             else
             {
                 logger.LogWarning("No 'payload' field in message. Root fields: {Fields}",
                     string.Join(", ", jsonDocument.RootElement.EnumerateObject().Select(p => p.Name)));
+                EngineMetrics.ProcessingErrors.WithLabels("unknown", "no_payload_field").Inc();
+
             }
         }
         catch (JsonException ex)
         {
             logger.LogError(ex, "JSON parsing error: {Message}", ex.Message);
+            EngineMetrics.ProcessingErrors.WithLabels("unknown", "json_parse_error").Inc();
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected error handling Kafka message: {Message}", ex.Message);
+            EngineMetrics.ProcessingErrors.WithLabels("unknown", "unexpected_error").Inc();
         }
 
         logger.LogInformation("========== KAFKA MESSAGE PROCESSING END ==========");

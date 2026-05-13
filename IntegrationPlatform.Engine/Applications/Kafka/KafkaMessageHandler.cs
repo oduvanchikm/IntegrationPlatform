@@ -35,58 +35,24 @@ public class KafkaMessageHandler(
 
         try
         {
-            var jsonDocument = JsonDocument.Parse(json);
-            logger.LogInformation("Successfully parsed JSON");
-
-            if (jsonDocument.RootElement.TryGetProperty("payload", out var payload))
+            var config = JsonSerializer.Deserialize<OrchestrationConfigModel>(json, new JsonSerializerOptions
             {
-                logger.LogInformation("Found 'payload' field");
-                logger.LogInformation("Payload content: {Payload}", payload.ToString());
+                PropertyNameCaseInsensitive = true
+            });
 
-                var config = JsonSerializer.Deserialize<OrchestrationConfigModel>(payload.ToString(),
-                    new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-
-
-                if (config != null)
-                {
-                    logger.LogInformation("SUCCESS: Deserialized OrchestrationConfig with ID: {ConfigId}",
-                        config.Id);
-                    logger.LogInformation("Config details: PubId={PubId}, SubId={SubId}, Pattern={Pattern}",
-                        config.InterfacePublicationId,
-                        config.InterfaceSubscriptionId,
-                        config.IntegrationPattern);
-
-                    using var scope = serviceProvider.CreateScope();
-                    var orchestrationService = scope.ServiceProvider.GetRequiredService<OrchestrationService>();
-
-                    logger.LogInformation(
-                        "Calling OrchestrationService.HandleNewOrchestration for config {ConfigId}", config.Id);
-                    using (EngineMetrics.ProcessingDuration.WithLabels(config.IntegrationPattern).NewTimer())
-                    {
-                        await orchestrationService.HandleNewOrchestration(config);
-                        
-                        EngineMetrics.EventsProcessed.WithLabels(config.IntegrationPattern).Inc();
-                    }
-
-
-                    logger.LogInformation("SUCCESS: Completed processing config {ConfigId}", config.Id);
-                }
-                else
-                {
-                    logger.LogError("FAILED: Could not deserialize OrchestrationConfig from payload");
-                    logger.LogError("Payload was: {Payload}", payload.ToString());
-                    EngineMetrics.ProcessingErrors.WithLabels("unknown", "deserialization_failed").Inc();
-                }
+            if (config != null && config.Id > 0)
+            {
+                logger.LogInformation("SUCCESS: Deserialized OrchestrationConfig with ID: {ConfigId}", config.Id);
+            
+                using var scope = serviceProvider.CreateScope();
+                var orchestrationService = scope.ServiceProvider.GetRequiredService<OrchestrationService>();
+            
+                await orchestrationService.HandleNewOrchestration(config);
+                logger.LogInformation("SUCCESS: Completed processing config {ConfigId}", config.Id);
             }
             else
             {
-                logger.LogWarning("No 'payload' field in message. Root fields: {Fields}",
-                    string.Join(", ", jsonDocument.RootElement.EnumerateObject().Select(p => p.Name)));
-                EngineMetrics.ProcessingErrors.WithLabels("unknown", "no_payload_field").Inc();
-
+                logger.LogError("FAILED: Could not deserialize OrchestrationConfig");
             }
         }
         catch (JsonException ex)

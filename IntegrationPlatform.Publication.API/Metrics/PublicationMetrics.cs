@@ -4,17 +4,14 @@ namespace IntegrationPlatform.Publication.API.Metrics;
 
 public static class PublicationMetrics
 {
-    // Количество опубликованных интерфейсов
     public static readonly Counter InterfacesPublished = Prometheus.Metrics
         .CreateCounter("publication_interfaces_published_total", 
             "Total number of interfaces published");
     
-    // Количество активных интерфейсов (источников)
     public static readonly Gauge ActiveSourceInterfaces = Prometheus.Metrics
         .CreateGauge("publication_active_source_interfaces", 
             "Number of active source interfaces");
     
-    // Количество ошибок
     public static readonly Counter ErrorsTotal = Prometheus.Metrics
         .CreateCounter("publication_errors_total", 
             "Total number of errors");
@@ -35,7 +32,6 @@ public static class PublicationMetrics
         .CreateGauge("publication_deprecated_interfaces", 
             "Number of deprecated interfaces");
     
-    // Распределение по типам интерфейсов
     public static readonly Gauge ApiInterfaces = Prometheus.Metrics
         .CreateGauge("publication_api_interfaces", 
             "Number of API type interfaces");

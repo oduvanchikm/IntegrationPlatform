@@ -1,4 +1,3 @@
-using IntegrationPlatform.Common.Enums;
 using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Subscription.API.DTO;
 using IntegrationPlatform.Subscription.API.Interfaces;

@@ -3,6 +3,7 @@ using IntegrationPlatform.Subscription.API.Services;
 using IntegrationPlatform.Subscription.DataAccess;
 using IntegrationPlatform.Subscription.API.Metrics;
 using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
+using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
 using Prometheus;
 using Serilog;
@@ -31,14 +32,15 @@ builder.Services.AddDbContextFactory<SubscriptionDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("SubscriptionDbContext"));
 });
 
-builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
+builder.Services.AddSubscriptionDbContext(
+    builder.Configuration.GetConnectionString("PublicationDbContext"));
 
-builder.Services.AddHttpClient("SearchApi", client =>
+builder.Services.AddDbContextFactory<PublicationDbContext>(options =>
 {
-    client.BaseAddress = new Uri("http://search-api:8080");
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
-    client.Timeout = TimeSpan.FromSeconds(30);
+    options.UseNpgsql(builder.Configuration.GetConnectionString("PublicationDbContext"));
 });
+
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 
 builder.Services.AddHttpClient("EngineApi", client =>
 {

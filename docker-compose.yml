@@ -402,6 +402,7 @@
       - --docker_only=true
       - --housekeeping_interval=10s
     privileged: true
+    restart: unless-stopped
     networks:
       - app-network
   

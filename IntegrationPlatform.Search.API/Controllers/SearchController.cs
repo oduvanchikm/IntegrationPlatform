@@ -9,19 +9,16 @@ namespace IntegrationPlatform.Search.API.Controllers;
 [Route("api/[controller]/interfaces")]
 public class SearchController(ISearchService searchService) : ControllerBase
 {
-    // Количество поисковых запросов
-    public static readonly Counter SearchQueriesTotal = Prometheus.Metrics
+    private static readonly Counter SearchQueriesTotal = Prometheus.Metrics
         .CreateCounter("search_queries_total", 
             "Total number of search queries",
             new CounterConfiguration { LabelNames = ["query_type"] });
-    
-    // Время выполнения поиска
-    public static readonly Histogram SearchDuration = Prometheus.Metrics
+
+    private static readonly Histogram SearchDuration = Prometheus.Metrics
         .CreateHistogram("search_duration_seconds", 
             "Duration of search queries",
             new HistogramConfiguration { Buckets = [0.01, 0.05, 0.1, 0.5, 1] });
     
-    // Количество результатов поиска
     public static readonly Histogram SearchResultsCount = Prometheus.Metrics
         .CreateHistogram("search_results_count", 
             "Number of results returned by search");

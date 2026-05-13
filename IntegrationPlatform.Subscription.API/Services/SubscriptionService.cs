@@ -1,6 +1,5 @@
-using System.Text.Json;
-using IntegrationPlatform.Common.Enums;
 using IntegrationPlatform.Common.Models;
+using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using IntegrationPlatform.Subscription.API.DTO;
 using IntegrationPlatform.Subscription.API.Interfaces;
 using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
@@ -11,6 +10,7 @@ namespace IntegrationPlatform.Subscription.API.Services;
 public class SubscriptionService(
     SubscriptionDbContext context,
     ILogger<SubscriptionService> logger,
+    PublicationDbContext publicationContext,
     IHttpClientFactory httpClientFactory)
     : ISubscriptionService
 {
@@ -36,7 +36,10 @@ public class SubscriptionService(
                 };
             }
 
-            var sourceInterface = await FetchSourceInterfaceFromSearchApi(request.PublicationInterfaceId);
+            // var sourceInterface = await FetchSourceInterfaceFromSearchApi(request.PublicationInterfaceId);
+
+            var sourceInterface = await publicationContext.DataInterfaces
+                .FirstOrDefaultAsync(di => di.Id == request.PublicationInterfaceId);
 
             if (sourceInterface == null)
             {
@@ -81,7 +84,7 @@ public class SubscriptionService(
             return new ConnectionResult { Success = false, Error = ex.Message };
         }
     }
-    
+
     public async Task<List<object>> GetAllInterfacesAsync()
     {
         try
@@ -108,105 +111,66 @@ public class SubscriptionService(
             throw;
         }
     }
-    
-    public async Task<InterfaceDetailsDto?> GetInterfaceByIdAsync(int id)
-{
-    try
-    {
-        logger.LogInformation("Getting interface by ID {Id} from subscription database", id);
-        
-        var interfaceNew = await context.DataInterfaces
-            .Include(di => di.Product)
-            .FirstOrDefaultAsync(di => di.Id == id);
-        
-        if (interfaceNew == null)
-        { 
-            logger.LogWarning("Interface with ID {Id} not found in subscription database", id);
-            return null;
-        }
-        
-        var dto = new InterfaceDetailsDto
-        {
-            Id = interfaceNew.Id,
-            Name = interfaceNew.Name,
-            Description = interfaceNew.Description ?? "",
-            InterfaceType = interfaceNew.InterfaceType.ToString(),
-            InterfaceTypeCode = (int)interfaceNew.InterfaceType,
-            Status = interfaceNew.Status.ToString(),
-            ProductId = interfaceNew.ProductId,
-            ProductName = interfaceNew.Product?.NameProduct ?? "Unknown"
-        };
-        
-        switch (interfaceNew)
-        {
-            case ApiInterface api:
-                dto.Host = api.Host;
-                dto.Port = api.Port;
-                dto.Endpoint = api.Endpoint;
-                dto.Token = api.Token;
-                dto.Username = api.Username;
-                break;
-                
-            case KafkaInterface kafka:
-                dto.BootstrapServers = kafka.BootstrapServers;
-                dto.TopicName = kafka.TopicName;
-                dto.Username = kafka.Username;
-                break;
-                
-            case DatabaseInterface db:
-                dto.Host = db.Host;
-                dto.Port = db.Port;
-                dto.DatabaseName = db.DatabaseName;
-                dto.Scheme = db.Scheme;
-                dto.Username = db.Username;
-                break;
-        }
-        
-        return dto;
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Error getting interface by ID {Id}", id);
-        throw;
-    }
-}
 
-    private async Task<SourceInterfaceDto?> FetchSourceInterfaceFromSearchApi(int interfaceId)
+    public async Task<InterfaceDetailsDto?> GetInterfaceByIdAsync(int id)
     {
         try
         {
-            var httpClient = httpClientFactory.CreateClient("SearchApi");
+            logger.LogInformation("Getting interface by ID {Id} from subscription database", id);
 
-            var response = await httpClient.GetAsync($"/api/Search/interfaces/by-id/{interfaceId}");
+            var interfaceNew = await context.DataInterfaces
+                .Include(di => di.Product)
+                .FirstOrDefaultAsync(di => di.Id == id);
 
-            if (!response.IsSuccessStatusCode)
+            if (interfaceNew == null)
             {
-                logger.LogWarning("Search API returned {StatusCode} for source interface {Id}",
-                    response.StatusCode, interfaceId);
+                logger.LogWarning("Interface with ID {Id} not found in subscription database", id);
                 return null;
             }
 
-            var json = await response.Content.ReadAsStringAsync();
-            var dto = JsonSerializer.Deserialize<SourceInterfaceDto>(json, new JsonSerializerOptions
+            var dto = new InterfaceDetailsDto
             {
-                PropertyNameCaseInsensitive = true
-            });
+                Id = interfaceNew.Id,
+                Name = interfaceNew.Name,
+                Description = interfaceNew.Description ?? "",
+                InterfaceType = interfaceNew.InterfaceType.ToString(),
+                InterfaceTypeCode = (int)interfaceNew.InterfaceType,
+                Status = interfaceNew.Status.ToString(),
+                ProductId = interfaceNew.ProductId,
+                ProductName = interfaceNew.Product?.NameProduct ?? "Unknown"
+            };
 
-            if (dto == null)
+            switch (interfaceNew)
             {
-                logger.LogWarning("Failed to deserialize source interface {Id} from Search API", interfaceId);
-                return null;
+                case ApiInterface api:
+                    dto.Host = api.Host;
+                    dto.Port = api.Port;
+                    dto.Endpoint = api.Endpoint;
+                    dto.Token = api.Token;
+                    dto.Username = api.Username;
+                    break;
+
+                case KafkaInterface kafka:
+                    dto.BootstrapServers = kafka.BootstrapServers;
+                    dto.TopicName = kafka.TopicName;
+                    dto.Username = kafka.Username;
+                    break;
+
+                case DatabaseInterface db:
+                    dto.Host = db.Host;
+                    dto.Port = db.Port;
+                    dto.DatabaseName = db.DatabaseName;
+                    dto.Scheme = db.Scheme;
+                    dto.Username = db.Username;
+                    break;
             }
-
-            logger.LogInformation("Successfully fetched source interface {Id} from Search API: {Name} ({Type})",
-                dto.Id, dto.Name, dto.InterfaceType);
 
             return dto;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error fetching source interface {Id} from Search API", interfaceId);
-            return null;
+            logger.LogError(ex, "Error getting interface by ID {Id}", id);
+            throw;
         }
     }
 
@@ -233,8 +197,9 @@ public class SubscriptionService(
                     Error = "Connection not found"
                 };
             }
-            
-            await StopEngineTask(config.InterfacePublicationId, config.InterfaceSubscriptionId, config.IntegrationPattern.ToString());
+
+            await StopEngineTask(config.InterfacePublicationId, config.InterfaceSubscriptionId,
+                config.IntegrationPattern.ToString());
 
             context.OrchestrationConfigs.Remove(config);
             await context.SaveChangesAsync();
@@ -247,14 +212,16 @@ public class SubscriptionService(
             return new ConnectionResult { Success = false, Error = ex.Message };
         }
     }
-    
+
     private async Task StopEngineTask(int sourceId, int targetId, string pattern)
     {
         try
         {
             var httpClient = httpClientFactory.CreateClient("EngineApi");
-            var response = await httpClient.PostAsync($"/api/engine/stop-task?sourceId={sourceId}&targetId={targetId}&pattern={pattern}", null);
-        
+            var response =
+                await httpClient.PostAsync(
+                    $"/api/engine/stop-task?sourceId={sourceId}&targetId={targetId}&pattern={pattern}", null);
+
             if (!response.IsSuccessStatusCode)
             {
                 logger.LogWarning("Failed to stop engine task for {SourceId}→{TargetId}", sourceId, targetId);

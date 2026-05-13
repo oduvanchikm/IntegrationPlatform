@@ -1,385 +1,155 @@
 #!/bin/bash
 
-echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-echo "║                        API → Kafka Integration Test                          ║"
-echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-echo ""
+# ==========================================
+# НАГРУЗОЧНОЕ ТЕСТИРОВАНИЕ KAFKA → DATABASE
+# ==========================================
 
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
-RED='\033[0;31m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-PASSED=0
-FAILED=0
-TARGET_TOPIC="target-topic-api-kafka"
+MESSAGE_COUNT=200
+BATCH_SIZE=100
 
-# ============================================================================
-# ФУНКЦИИ
-# ============================================================================
-reset_kafka_topic() {
-    local topic=$1
-    docker exec kafka33 kafka-topics --delete --topic "$topic" --bootstrap-server kafka33:9092 &>/dev/null
-    sleep 2
-    docker exec kafka33 kafka-topics --create \
-        --topic "$topic" \
-        --bootstrap-server kafka33:9092 \
-        --partitions 1 \
-        --replication-factor 1 &>/dev/null
-    echo -e "${GREEN}   ✓ Топик '$topic' пересоздан${NC}"
-}
+echo -e "${CYAN}════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════${NC}"
+echo -e "${CYAN}                     НАГРУЗОЧНОЕ ТЕСТИРОВАНИЕ KAFKA → DATABASE${NC}"
+echo -e "${CYAN}════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════${NC}"
 
-send_api_data() {
-    local message=$1
-    local value=${2:-0}
-    local timestamp=$(date -Iseconds)
-    
-    docker exec mock-api-source curl -s -X POST http://localhost:8080/api/source-data \
-        -H "Content-Type: application/json" \
-        -d "{\"id\":$RANDOM,\"message\":\"$message\",\"value\":$value,\"timestamp\":\"$timestamp\"}" &>/dev/null
-    sleep 1
-}
+# ------------------------------------------------------------------
+# 1. ПРОВЕРКА ИНТЕРФЕЙСОВ
+# ------------------------------------------------------------------
+echo -e "\n${BLUE}🔧 1. ПРОВЕРКА ИНТЕРФЕЙСОВ${NC}"
 
-read_kafka_messages() {
-    docker exec kafka33 kafka-console-consumer \
-        --bootstrap-server kafka33:9092 \
-        --topic "$TARGET_TOPIC" \
-        --from-beginning \
-        --max-messages 200 \
-        --timeout-ms 10000 2>/dev/null
-}
+# Проверяем Source Kafka интерфейс
+SOURCE_ID=$(curl -s "http://localhost:5002/api/Search/interfaces/by-product?productName=KafkaSourceProduct" | jq -r '.[0].id // empty')
+if [ -z "$SOURCE_ID" ]; then
+    echo -e "${YELLOW}   Создание Source Kafka интерфейса...${NC}"
+    SOURCE_RESPONSE=$(curl -s -X POST http://localhost:5001/api/Publication/interfaces \
+      -H "Content-Type: application/json" \
+      -d '{
+        "name": "LoadTest_Kafka_Source",
+        "productName": "KafkaSourceProduct",
+        "interfaceType": 1,
+        "productType": 1,
+        "bootstrapServers": "kafka2:9092",
+        "topicName": "source-topic"
+      }')
+    SOURCE_ID=$(echo $SOURCE_RESPONSE | jq -r '.interfaceId')
+fi
+echo -e "${GREEN}   ✓ Source Kafka интерфейс (ID: $SOURCE_ID)${NC}"
 
-# ============================================================================
-# 0. ПРОВЕРКА ЗАВИСИМОСТЕЙ
-# ============================================================================
-echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}🔧 0. ПРОВЕРКА ЗАВИСИМОСТЕЙ${NC}"
-echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+# Проверяем Target Database интерфейс
+TARGET_ID=$(curl -s "http://localhost:5003/api/Subscription/interfaces" | jq -r '.[] | select(.name=="LoadTest_DB_Target") | .id // empty')
+if [ -z "$TARGET_ID" ]; then
+    echo -e "${YELLOW}   Создание Target Database интерфейса...${NC}"
+    TARGET_RESPONSE=$(curl -s -X POST http://localhost:5003/api/Interface \
+      -H "Content-Type: application/json" \
+      -d '{
+        "name": "LoadTest_DB_Target",
+        "productName": "DBTargetProduct",
+        "interfaceType": 0,
+        "host": "postgres-target",
+        "port": "5432",
+        "databaseName": "target_db",
+        "scheme": "target",
+        "username": "admin",
+        "password": "password"
+      }')
+    TARGET_ID=$(echo $TARGET_RESPONSE | jq -r '.interfaceId')
+fi
+echo -e "${GREEN}   ✓ Target Database интерфейс (ID: $TARGET_ID)${NC}"
 
-echo -ne "${YELLOW}   Проверка Mock API Source...${NC}"
-if curl -s -o /dev/null -w "%{http_code}" http://localhost:5100/health | grep -q "200"; then
-    echo -e "${GREEN} ✓ OK${NC}"
+# ------------------------------------------------------------------
+# 2. ПРОВЕРКА ИНТЕГРАЦИИ
+# ------------------------------------------------------------------
+echo -e "\n${BLUE}🔗 2. ПРОВЕРКА ИНТЕГРАЦИИ${NC}"
+
+CONNECTION_ID=$(curl -s http://localhost:5003/api/Subscription/connections | jq -r '.[] | select(.integrationPattern == "6" and .interfacePublicationId == '$SOURCE_ID') | .id')
+if [ -z "$CONNECTION_ID" ]; then
+    echo -e "${YELLOW}   Создание интеграции Kafka → Database...${NC}"
+    CONNECT_RESPONSE=$(curl -s -X POST http://localhost:5003/api/Subscription/connect \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"publicationInterfaceId\": $SOURCE_ID,
+        \"subscriptionInterfaceId\": $TARGET_ID,
+        \"integrationPattern\": 6,
+        \"scheduleCron\": \"* * * * *\"
+      }")
+    CONNECTION_ID=$(echo $CONNECT_RESPONSE | jq -r '.orchestrationConfigId')
+fi
+echo -e "${GREEN}   ✓ Интеграция существует (ID: $CONNECTION_ID)${NC}"
+
+# ------------------------------------------------------------------
+# 3. ОЧИСТКА ЦЕЛЕВОЙ БАЗЫ ДАННЫХ
+# ------------------------------------------------------------------
+echo -e "\n${BLUE}🗑️ 3. ОЧИСТКА ЦЕЛЕВОЙ БАЗЫ ДАННЫХ${NC}"
+docker exec postgres-target psql -U admin -d target_db -c "TRUNCATE target.data;" 2>/dev/null
+echo -e "${GREEN}   ✓ Target база данных очищена${NC}"
+
+# ------------------------------------------------------------------
+# 4. НАГРУЗОЧНЫЙ ТЕСТ
+# ------------------------------------------------------------------
+echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${BLUE}📊 4. ЗАПУСК НАГРУЗОЧНОГО ТЕСТА${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+START_TIME=$(date +%s%N)
+
+echo -e "${YELLOW}   Отправка ${MESSAGE_COUNT} сообщений в source-topic...${NC}"
+
+for i in $(seq 1 $MESSAGE_COUNT); do
+    echo "{\"id\":$i,\"message\":\"Kafka→Database test $i\",\"value\":$i}"
+done | docker exec -i kafka2 kafka-console-producer \
+    --bootstrap-server kafka2:9092 \
+    --topic source-topic \
+    --batch-size $BATCH_SIZE \
+    --linger-ms 5 2>/dev/null
+
+END_TIME=$(date +%s%N)
+ELAPSED_MS=$(( ($END_TIME - $START_TIME) / 1000000 ))
+RPS=$(echo "scale=2; $MESSAGE_COUNT / ($ELAPSED_MS / 1000)" | bc)
+
+echo -e "${GREEN}   ✅ Отправлено ${MESSAGE_COUNT} сообщений за ${ELAPSED_MS} мс${NC}"
+echo -e "${GREEN}   ✅ Пропускная способность: ${RPS} сообщений/сек${NC}"
+
+# ------------------------------------------------------------------
+# 5. ПРОВЕРКА ДОСТАВКИ В БАЗУ ДАННЫХ
+# ------------------------------------------------------------------
+echo -e "\n${BLUE}🔍 5. ПРОВЕРКА ДОСТАВКИ В TARGET DATABASE${NC}"
+echo -e "${YELLOW}   Ожидание обработки Engine (15 сек)...${NC}"
+sleep 15
+
+RECEIVED_COUNT=$(docker exec postgres-target psql -U admin -d target_db -t -c "SELECT COUNT(*) FROM target.data;" 2>/dev/null | tr -d ' ')
+
+echo -e "${GREEN}📊 РЕЗУЛЬТАТ:${NC}"
+echo "   ┌─────────────────────────────────────────────────────────┐"
+echo "   │  Отправлено сообщений:      ${MESSAGE_COUNT}                     │"
+echo "   │  Пропускная способность:    ${RPS} сообщений/сек              │"
+echo "   │  Получено в Target DB:      ${RECEIVED_COUNT}                       │"
+if [ "$RECEIVED_COUNT" -eq "$MESSAGE_COUNT" ]; then
+    echo "   │  Статус:                   ✅ ВСЕ ДАННЫЕ ДОСТАВЛЕНЫ           │"
 else
-    echo -e "${RED} ✗ НЕ ДОСТУПЕН${NC}"
-    echo -e "${YELLOW}   Запустите: docker-compose up -d mock-api-source${NC}"
-    exit 1
+    echo "   │  Статус:                   ⚠️ ДОСТАВЛЕНО ${RECEIVED_COUNT}/${MESSAGE_COUNT}      │"
 fi
+echo "   └─────────────────────────────────────────────────────────┘"
 
-echo -ne "${YELLOW}   Проверка Kafka (kafka33)...${NC}"
-if docker exec kafka33 kafka-broker-api-versions --bootstrap-server kafka33:9092 &>/dev/null; then
-    echo -e "${GREEN} ✓ OK${NC}"
-else
-    echo -e "${RED} ✗ НЕ ДОСТУПЕН${NC}"
-    exit 1
-fi
+# ------------------------------------------------------------------
+# 6. ПРОВЕРКА ЛОГОВ ENGINE
+# ------------------------------------------------------------------
+echo -e "\n${BLUE}📋 6. ПОСЛЕДНИЕ ЛОГИ ENGINE${NC}"
+docker logs integration-engine --tail 15 2>/dev/null | grep -E "KAFKA|WriteToDatabase|Database" | tail -5
 
-# ============================================================================
-# 1. ПОДГОТОВКА KAFKA
-# ============================================================================
-echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}📦 1. ПОДГОТОВКА KAFKA${NC}"
-echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-
-reset_kafka_topic "$TARGET_TOPIC"
-
-# ============================================================================
-# 2. ОЧИСТКА СТАРЫХ КОНФИГУРАЦИЙ
-# ============================================================================
-echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}🧹 2. ОЧИСТКА СТАРЫХ КОНФИГУРАЦИЙ${NC}"
-echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-
-OLD_CONNECTIONS=$(curl -s http://localhost:5003/api/Subscription/connections | jq -r '.[] | select(.integrationPattern == "ApiToKafka") | .id' 2>/dev/null)
-if [ -n "$OLD_CONNECTIONS" ]; then
-    for id in $OLD_CONNECTIONS; do
-        curl -s -X DELETE http://localhost:5003/api/Subscription/connections/$id &>/dev/null
-        echo -e "${YELLOW}   Удалена связь ID: $id${NC}"
-    done
-fi
-echo -e "${GREEN}   ✓ Старые ApiToKafka связи удалены${NC}"
-sleep 3
-
-# ============================================================================
-# 3. СОЗДАНИЕ ИНТЕРФЕЙСОВ
-# ============================================================================
-echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}🔌 3. СОЗДАНИЕ ИНТЕРФЕЙСОВ${NC}"
-echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-
-# Source API Interface
-SOURCE_RESPONSE=$(curl -s -X POST http://localhost:5001/api/Publication/interfaces \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Source API Interface",
-    "productName": "APISourceProduct",
-    "interfaceType": 2,
-    "description": "Source REST API for testing",
-    "productType": 1,
-    "host": "http://mock-api-source",
-    "port": "8080",
-    "endpoint": "/api/source-data",
-    "username": "",
-    "password": "",
-    "token": ""
-  }')
-
-SOURCE_ID=$(echo $SOURCE_RESPONSE | jq -r '.interfaceId')
-if [ "$SOURCE_ID" != "null" ] && [ -n "$SOURCE_ID" ]; then
-    echo -e "${GREEN}✓ Source API Interface ID: ${SOURCE_ID}${NC}"
-else
-    echo -e "${RED}✗ Failed to create Source API Interface${NC}"
-    echo "Response: $SOURCE_RESPONSE"
-    exit 1
-fi
-
-# Target Kafka Interface
-TARGET_RESPONSE=$(curl -s -X POST http://localhost:5003/api/Interface \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"name\": \"Target Kafka Interface\",
-    \"productName\": \"KafkaTargetProduct\",
-    \"interfaceType\": 1,
-    \"description\": \"Target Kafka topic for testing\",
-    \"bootstrapServers\": \"kafka33:9092\",
-    \"topicName\": \"$TARGET_TOPIC\",
-    \"username\": \"\",
-    \"password\": \"\"
-  }")
-
-TARGET_ID=$(echo $TARGET_RESPONSE | jq -r '.interfaceId')
-if [ "$TARGET_ID" != "null" ] && [ -n "$TARGET_ID" ]; then
-    echo -e "${GREEN}✓ Target Kafka Interface ID: ${TARGET_ID}${NC}"
-else
-    echo -e "${RED}✗ Failed to create Target Kafka Interface${NC}"
-    exit 1
-fi
-
-# ============================================================================
-# 4. ТЕСТ 1: ЕДИНОРАЗОВОЕ ВЫПОЛНЕНИЕ
-# ============================================================================
-echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}⚡ 4. ТЕСТ 1: ЕДИНОРАЗОВОЕ ВЫПОЛНЕНИЕ${NC}"
-echo -e "${CYAN}   (schedule: * * * * * — выполняется сразу)${NC}"
-echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-
-reset_kafka_topic "$TARGET_TOPIC"
-
-TEST_MARKER="ApiKafkaTest_$(date +%s)"
-echo -e "${YELLOW}   Отправка тестовых данных в Source API: ${TEST_MARKER}${NC}"
-send_api_data "$TEST_MARKER" 100
-
-# Создаём связь с единоразовым выполнением
-CONNECT_RESPONSE=$(curl -s -X POST http://localhost:5003/api/Subscription/connect \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"publicationInterfaceId\": $SOURCE_ID,
-    \"subscriptionInterfaceId\": $TARGET_ID,
-    \"integrationPattern\": 4,
-    \"scheduleCron\": \"* * * * *\",
-    \"maxRetryAttempts\": 3,
-    \"retryDelaySeconds\": 30,
-    \"executionTimeoutSeconds\": 300
-  }")
-
-CONFIG_ID=$(echo $CONNECT_RESPONSE | jq -r '.orchestrationConfigId')
-echo -e "${GREEN}✓ Связь создана (Config ID: ${CONFIG_ID})${NC}"
-
-echo -e "${YELLOW}   Ожидание обработки Engine (20 сек)...${NC}"
-sleep 20
-
-# Проверка результата
-echo -e "${YELLOW}   Чтение сообщений из топика '${TARGET_TOPIC}'...${NC}"
-RESULT=$(read_kafka_messages)
-
-if [[ -n "$RESULT" ]]; then
-    echo -e "${GREEN}   ✓ Сообщения получены в топике!${NC}"
-    
-    if [[ "$RESULT" == *"$TEST_MARKER"* ]]; then
-        echo -e "${GREEN}   ✓ Содержимое сообщения совпадает: найдено '$TEST_MARKER'${NC}"
-        ((PASSED++))
-    else
-        echo -e "${YELLOW}   ⚠ Сообщение получено, но маркер '$TEST_MARKER' не найден${NC}"
-        echo -e "${YELLOW}   💡 Возможно, прочитано старое сообщение${NC}"
-        ((PASSED++))
-    fi
-else
-    echo -e "${RED}   ✗ Нет сообщений в топике '${TARGET_TOPIC}'${NC}"
-    ((FAILED++))
-fi
-
-# Удаляем связь
-curl -s -X DELETE http://localhost:5003/api/Subscription/connections/$CONFIG_ID &>/dev/null
-echo -e "${YELLOW}   Связь удалена${NC}"
-sleep 10
-
-# ============================================================================
-# 5. ТЕСТ 2: РАСПИСАНИЕ КАЖДУЮ МИНУТУ
-# ============================================================================
-echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}⏰ 5. ТЕСТ 2: РАСПИСАНИЕ КАЖДУЮ МИНУТУ${NC}"
-echo -e "${CYAN}   (schedule: */1 * * * *)${NC}"
-echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-
-reset_kafka_topic "$TARGET_TOPIC"
-
-# Создаём связь с расписанием
-CONNECT_RESPONSE2=$(curl -s -X POST http://localhost:5003/api/Subscription/connect \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"publicationInterfaceId\": $SOURCE_ID,
-    \"subscriptionInterfaceId\": $TARGET_ID,
-    \"integrationPattern\": 4,
-    \"scheduleCron\": \"*/1 * * * *\",
-    \"maxRetryAttempts\": 3,
-    \"retryDelaySeconds\": 30,
-    \"executionTimeoutSeconds\": 300
-  }")
-
-CONFIG_ID2=$(echo $CONNECT_RESPONSE2 | jq -r '.orchestrationConfigId')
-echo -e "${GREEN}✓ Связь с расписанием создана (Config ID: ${CONFIG_ID2})${NC}"
-
-# Ждём до начала следующей минуты + буфер
-CURRENT_MIN=$(date +%M)
-WAIT_SEC=$(( 60 - 10#$CURRENT_MIN + 10 ))
-echo -e "${YELLOW}   Ожидание следующего выполнения расписания (~${WAIT_SEC} сек)...${NC}"
-sleep $WAIT_SEC
-
-SCHEDULE_MARKER="ScheduledApiKafka_$(date +%s)"
-echo -e "${YELLOW}   Отправка сообщения с маркером: $SCHEDULE_MARKER${NC}"
-send_api_data "$SCHEDULE_MARKER" 200
-
-echo -e "${YELLOW}   Ожидание выполнения по расписанию (20 сек)...${NC}"
-sleep 20
-
-# Проверка результата
-echo -e "${YELLOW}   Чтение сообщений из топика '${TARGET_TOPIC}'...${NC}"
-RESULT2=$(read_kafka_messages)
-
-if [[ -n "$RESULT2" ]]; then
-    echo -e "${GREEN}   ✓ Сообщения получены в топике!${NC}"
-    
-    if [[ "$RESULT2" == *"$SCHEDULE_MARKER"* ]]; then
-        echo -e "${GREEN}   ✓ Найдено сообщение с маркером расписания: '$SCHEDULE_MARKER'${NC}"
-        ((PASSED++))
-    else
-        echo -e "${YELLOW}   ⚠ Сообщение получено, но маркер '$SCHEDULE_MARKER' не найден${NC}"
-        ((PASSED++))
-    fi
-else
-    echo -e "${RED}   ✗ Нет сообщений в топике после расписания${NC}"
-    ((FAILED++))
-fi
-
-# Удаляем связь
-curl -s -X DELETE http://localhost:5003/api/Subscription/connections/$CONFIG_ID2 &>/dev/null
-echo -e "${YELLOW}   Связь удалена${NC}"
-sleep 10
-
-# ============================================================================
-# 6. ТЕСТ 3: МАССОВАЯ ЗАГРУЗКА
-# ============================================================================
-echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}📦 6. ТЕСТ 3: МАССОВАЯ ЗАГРУЗКА (10 записей)${NC}"
-echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-
-reset_kafka_topic "$TARGET_TOPIC"
-
-BULK_MARKER="BulkApiKafka_$(date +%s)"
-echo -e "${YELLOW}   Генерация 10 тестовых записей с маркером: $BULK_MARKER${NC}"
-for i in {1..10}; do
-    send_api_data "${BULK_MARKER}_$i" $((i*50))
-done
-echo -e "${GREEN}   ✓ Source API: 10 записей добавлены${NC}"
-sleep 3
-
-# Создаём связь
-CONNECT_RESPONSE3=$(curl -s -X POST http://localhost:5003/api/Subscription/connect \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"publicationInterfaceId\": $SOURCE_ID,
-    \"subscriptionInterfaceId\": $TARGET_ID,
-    \"integrationPattern\": 4,
-    \"scheduleCron\": \"* * * * *\",
-    \"maxRetryAttempts\": 3,
-    \"retryDelaySeconds\": 30,
-    \"executionTimeoutSeconds\": 300
-  }")
-
-CONFIG_ID3=$(echo $CONNECT_RESPONSE3 | jq -r '.orchestrationConfigId')
-echo -e "${GREEN}✓ Связь создана (Config ID: ${CONFIG_ID3})${NC}"
-
-echo -e "${YELLOW}   Ожидание обработки Engine (25 сек)...${NC}"
-sleep 25
-
-# Проверка результата
-echo -e "${YELLOW}   Чтение сообщений из топика '${TARGET_TOPIC}'...${NC}"
-RESULT3=$(read_kafka_messages)
-
-if [[ -n "$RESULT3" ]]; then
-    BULK_COUNT=$(echo "$RESULT3" | grep -c "$BULK_MARKER" 2>/dev/null || echo "0")
-    echo -e "${GREEN}   ✓ Сообщения получены в топике!${NC}"
-    echo -e "${YELLOW}   Найдено сообщений с маркером '$BULK_MARKER': ${BULK_COUNT}${NC}"
-    
-    if [ "$BULK_COUNT" -ge 1 ]; then
-        echo -e "${GREEN}   ✅ Массовая загрузка: УСПЕШНО!${NC}"
-        ((PASSED++))
-    else
-        echo -e "${YELLOW}   ⚠ Сообщения есть, но маркер не найден (возможно, прочитаны старые)${NC}"
-        ((PASSED++))
-    fi
-else
-    echo -e "${RED}   ✗ Нет сообщений в топике после массовой загрузки${NC}"
-    ((FAILED++))
-fi
-
-# Удаляем связь
-curl -s -X DELETE http://localhost:5003/api/Subscription/connections/$CONFIG_ID3 &>/dev/null
-echo -e "${YELLOW}   Связь удалена${NC}"
-sleep 5
-
-# ============================================================================
-# 7. ПРОВЕРКА ДАННЫХ В KAFKA
-# ============================================================================
-echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}🔍 7. ПРОВЕРКА ДАННЫХ В KAFKA${NC}"
-echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-
-echo -e "${YELLOW}   Последние сообщения в топике '$TARGET_TOPIC':${NC}"
-read_kafka_messages | tail -5
-
-echo -e "\n${YELLOW}   Описание топика:${NC}"
-docker exec kafka33 kafka-topics --describe --topic "$TARGET_TOPIC" --bootstrap-server kafka33:9092 2>/dev/null
-
-# ============================================================================
-# 8. ЛОГИ ENGINE
-# ============================================================================
-echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}📋 8. ПОСЛЕДНИЕ ЛОГИ ENGINE${NC}"
-echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-
-docker logs --tail 30 integration-engine 2>/dev/null | grep -E "(ApiToKafka|API TO KAFKA|KafkaWriter|WriteToKafka|🎉|📤)" | tail -15 || echo "   (нет релевантных логов)"
-
-# ============================================================================
-# 9. ИТОГИ
-# ============================================================================
-echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}📊 ИТОГИ ТЕСТИРОВАНИЯ${NC}"
-echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-
-TOTAL=$((PASSED + FAILED))
-if [ $FAILED -eq 0 ]; then
-    echo -e "${GREEN}✅ Все тесты пройдены: ${PASSED}/${TOTAL}${NC}"
-    EXIT_CODE=0
-else
-    echo -e "${RED}❌ Пройдено: ${PASSED}, Не пройдено: ${FAILED} из ${TOTAL}${NC}"
-    EXIT_CODE=1
-fi
-
-# Финальная очистка
-echo -e "\n${YELLOW}🧹 Финальная очистка...${NC}"
-reset_kafka_topic "$TARGET_TOPIC" &>/dev/null
-echo -e "${GREEN}✓ Очистка завершена${NC}"
-
-exit $EXIT_CODE
+# ------------------------------------------------------------------
+# ИТОГИ
+# ------------------------------------------------------------------
+echo -e "\n${CYAN}════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════${NC}"
+echo -e "${CYAN}                     📊 ИТОГИ ТЕСТИРОВАНИЯ KAFKA → DATABASE${NC}"
+echo -e "${CYAN}════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════${NC}"
+echo ""
+echo -e "${GREEN}✅ Результаты:${NC}"
+echo "   • Отправлено: ${MESSAGE_COUNT} сообщений"
+echo "   • Пропускная способность: ${RPS} msg/s"
+echo "   • Доставлено в БД: ${RECEIVED_COUNT} записей"

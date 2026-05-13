@@ -8,49 +8,35 @@ namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 
 public class KafkaToApiHandler(ILogger<KafkaToApiHandler> logger, KafkaReader kafkaReader, ApiWriter apiWriter)
 {
-    // public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface)
-    // {
-    //     logger.LogInformation("========== KAFKA TO API HANDLER EXECUTE START ==========");
-    //
-    //     var sourceKafka = publicationInterface as KafkaInterface;
-    //     var targetApi = subscriptionInterface as ApiInterface;
-    //
-    //     if (sourceKafka == null || targetApi == null)
-    //     {
-    //         logger.LogError("Kafka and Kafka are required.");
-    //         return;
-    //     }
-    //
-    //     logger.LogInformation("Source Kafka: BootstrapServers={BS}, Topic={Topic}",
-    //         sourceKafka.BootstrapServers, sourceKafka.TopicName);
-    //     logger.LogInformation("Target Kafka: Endpoint={Endpoint}, Host={Host}, Port={Port}",
-    //         targetApi.Endpoint, targetApi.Host, targetApi.Port);
-    //
-    //     while (true)
-    //     {
-    //         try
-    //         {
-    //             var messages = await kafkaReader.ReadFromKafkaAsync(sourceKafka);
-    //
-    //             if (messages.Any())
-    //             {
-    //                 logger.LogInformation("Consumed {Count} messages from Kafka", messages.Count);
-    //
-    //                 var jsonMessages = messages.Select(msg =>
-    //                     JsonSerializer.Serialize(new { message = msg, timestamp = DateTime.UtcNow })
-    //                 ).ToList();
-    //
-    //                 await apiWriter.WriteToApiAsync(targetApi, jsonMessages);
-    //                 logger.LogInformation("Successfully sent {Count} messages to API", messages.Count);
-    //             }
-    //
-    //             await Task.Delay(1000);
-    //         }
-    //         catch (Exception ex)
-    //         {
-    //             logger.LogError(ex, "Error in KafkaToKafkaHandler.ExecuteAsync: {Message}", ex.Message);
-    //             await Task.Delay(5000);
-    //         }
-    //     }
-    // }
+    private CancellationTokenSource _cts = new();
+    public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface)
+    {
+        logger.LogInformation("========== KAFKA TO API HANDLER EXECUTE START ==========");
+    
+        var sourceKafka = publicationInterface as KafkaInterface;
+        var targetApi = subscriptionInterface as ApiInterface;
+    
+        if (sourceKafka == null || targetApi == null)
+        {
+            logger.LogError("Kafka and Kafka are required.");
+            return;
+        }
+    
+        logger.LogInformation("Source Kafka: BootstrapServers={BS}, Topic={Topic}",
+            sourceKafka.BootstrapServers, sourceKafka.TopicName);
+        logger.LogInformation("Target Kafka: Endpoint={Endpoint}, Host={Host}, Port={Port}",
+            targetApi.Endpoint, targetApi.Host, targetApi.Port);
+    
+        await kafkaReader.ReadFromKafkaAsync(sourceKafka, async (message) =>
+        {
+            logger.LogInformation("Received message from Kafka, writing to database");
+            await apiWriter.WriteToApiAsync(targetApi, new List<string> { message });
+            logger.LogDebug("Message written to database");
+        }, _cts.Token);
+    }
+    
+    public void Stop()
+    {
+        _cts.Cancel();
+    }
 }

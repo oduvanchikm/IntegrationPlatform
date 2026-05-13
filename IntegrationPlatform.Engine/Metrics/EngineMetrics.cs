@@ -4,19 +4,16 @@ namespace IntegrationPlatform.Engine.Metrics;
 
 public static class EngineMetrics
 {
-    // Количество обработанных событий
     public static readonly Counter EventsProcessed = Prometheus.Metrics
         .CreateCounter("engine_events_processed_total", 
             "Total number of events processed by engine",
             new CounterConfiguration { LabelNames = new[] { "pattern" } });
     
-    // Количество ошибок в обработке
     public static readonly Counter ProcessingErrors = Prometheus.Metrics
         .CreateCounter("engine_processing_errors_total", 
             "Total number of processing errors",
             new CounterConfiguration { LabelNames = new[] { "pattern", "error_type" } });
     
-    // Время обработки события
     public static readonly Histogram ProcessingDuration = Prometheus.Metrics
         .CreateHistogram("engine_processing_duration_seconds", 
             "Duration of event processing",
@@ -26,12 +23,10 @@ public static class EngineMetrics
                 LabelNames = new[] { "pattern" }
             });
     
-    // Количество активных задач (стримов)
     public static readonly Gauge ActiveTasks = Prometheus.Metrics
         .CreateGauge("engine_active_tasks", 
             "Number of active streaming tasks");
     
-    // Размер очереди сообщений Kafka
     public static readonly Gauge KafkaLag = Prometheus.Metrics
         .CreateGauge("engine_kafka_consumer_lag", 
             "Kafka consumer lag by topic",

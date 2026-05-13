@@ -10,7 +10,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddDbContext<PublicationDbContext>(options =>
             options.UseNpgsql(connectionString));
-            
+
         return services;
     }
 }

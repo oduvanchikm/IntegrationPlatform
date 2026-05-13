@@ -14,24 +14,24 @@ public class InterfaceController(SubscriptionDbContext context, ILogger<Interfac
     : ControllerBase
 {
     private static readonly Counter InterfacesCreated = Prometheus.Metrics
-        .CreateCounter("subscription_interfaces_created_total", 
+        .CreateCounter("subscription_interfaces_created_total",
             "Total number of consumer interfaces created",
             new CounterConfiguration { LabelNames = ["interface_type"] });
-    
+
     private static readonly Gauge ActiveConsumerInterfaces = Prometheus.Metrics
-        .CreateGauge("subscription_active_consumer_interfaces", 
+        .CreateGauge("subscription_active_consumer_interfaces",
             "Number of active consumer interfaces");
-    
+
     private static readonly Counter ErrorsTotal = Prometheus.Metrics
-        .CreateCounter("subscription_interface_errors_total", 
+        .CreateCounter("subscription_interface_errors_total",
             "Total number of errors in interface controller",
             new CounterConfiguration { LabelNames = ["error_type"] });
-    
+
     private static readonly Histogram RequestDuration = Prometheus.Metrics
-        .CreateHistogram("subscription_interface_request_duration_seconds", 
+        .CreateHistogram("subscription_interface_request_duration_seconds",
             "Duration of interface API requests",
             new HistogramConfiguration { Buckets = [0.01, 0.05, 0.1, 0.5, 1, 2, 5] });
-    
+
     [HttpPost]
     public async Task<IActionResult> CreateConsumerInterface([FromBody] CreateConsumerInterfaceRequest request)
     {
@@ -123,10 +123,10 @@ public class InterfaceController(SubscriptionDbContext context, ILogger<Interfac
 
             context.DataInterfaces.Add(newInterface);
             await context.SaveChangesAsync();
-            
+
             string typeLabel = request.InterfaceType.ToString().ToLower();
             InterfacesCreated.WithLabels(typeLabel).Inc();
-            
+
             ActiveConsumerInterfaces.Inc();
 
             logger.LogInformation("Consumer interface created successfully. ID: {InterfaceId}, Type: {InterfaceType}",

@@ -23,9 +23,9 @@ public class KafkaToKafkaHandler(
             logger.LogInformation("MESSAGE RECEIVED from {Topic}: {Preview}",
                 source.TopicName,
                 message.Length > 100 ? message[..100] + "..." : message);
-            
+
             logger.LogDebug("Received message from Kafka topic {Topic}", source.TopicName);
-            
+
             try
             {
                 await kafkaWriter.WriteToKafkaAsync(target, new List<string> { message });
@@ -115,7 +115,7 @@ public class KafkaToKafkaHandler(
 
         logger.LogInformation("Kafka to Kafka streaming started with key: {TaskKey}", taskKey);
     }
-    
+
     public static void StopTask(int sourceId, int targetId)
     {
         BaseBatchHandler.StopTask(sourceId, targetId);

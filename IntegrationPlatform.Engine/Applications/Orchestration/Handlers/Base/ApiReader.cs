@@ -15,10 +15,10 @@ public class ApiReader(ILogger<ApiReader> logger)
         {
             var response = await _httpClient.GetAsync(url);
             var content = await response.Content.ReadAsStringAsync();
-        
+
             logger.LogInformation("API Response Status: {StatusCode}", response.StatusCode);
             logger.LogInformation("API Response Content: {Content}", content);
-        
+
             response.EnsureSuccessStatusCode();
             return content;
         }

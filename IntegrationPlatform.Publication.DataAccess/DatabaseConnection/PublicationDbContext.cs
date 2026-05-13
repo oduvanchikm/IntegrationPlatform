@@ -21,7 +21,7 @@ public class PublicationDbContext(DbContextOptions<PublicationDbContext> options
         modelBuilder.Entity<DatabaseInterface>().ToTable("DatabaseInterface");
         modelBuilder.Entity<KafkaInterface>().ToTable("KafkaInterface");
         modelBuilder.Entity<Product>().ToTable("Product");
-        
+
         modelBuilder.Entity<DataInterface>()
             .Ignore(di => di.OrchestrationConfig);
 

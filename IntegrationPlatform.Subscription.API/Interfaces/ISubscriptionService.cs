@@ -1,6 +1,5 @@
 using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Subscription.API.DTO;
-using Microsoft.AspNetCore.Mvc;
 
 namespace IntegrationPlatform.Subscription.API.Interfaces;
 

@@ -4,7 +4,6 @@ using IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
-using NCrontab;
 
 namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 
@@ -34,14 +33,14 @@ public class ApiToDatabaseHandler(
                 catch (JsonException)
                 {
                     logger.LogWarning("API response is not valid JSON, wrapping in JSON object");
-                    dataToSave = JsonSerializer.Serialize(new 
-                    { 
-                        raw_data = data, 
+                    dataToSave = JsonSerializer.Serialize(new
+                    {
+                        raw_data = data,
                         is_valid_json = false,
                         received_at = DateTime.UtcNow
                     });
                 }
-                
+
                 await databaseWriter.WriteToDatabaseAsync(target, new List<string> { dataToSave });
                 logger.LogInformation("Successfully saved message to database");
             }

@@ -3,7 +3,6 @@ using IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
-using NCrontab;
 
 namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 

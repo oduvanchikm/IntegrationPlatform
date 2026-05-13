@@ -13,23 +13,23 @@ public class PublicationController(
     ILogger<PublicationController> logger) : ControllerBase
 {
     private static readonly Counter InterfacesPublished = Prometheus.Metrics
-        .CreateCounter("publication_interfaces_published_total", 
+        .CreateCounter("publication_interfaces_published_total",
             "Total number of interfaces published");
 
     private static readonly Gauge ActiveSourceInterfaces = Prometheus.Metrics
-        .CreateGauge("publication_active_source_interfaces", 
+        .CreateGauge("publication_active_source_interfaces",
             "Number of active source interfaces");
 
     private static readonly Histogram RequestDuration = Prometheus.Metrics
-        .CreateHistogram("publication_request_duration_seconds", 
+        .CreateHistogram("publication_request_duration_seconds",
             "Duration of publication API requests",
             new HistogramConfiguration { Buckets = [0.01, 0.05, 0.1, 0.5, 1, 2, 5] });
 
     private static readonly Counter ErrorsTotal = Prometheus.Metrics
-        .CreateCounter("publication_errors_total", 
+        .CreateCounter("publication_errors_total",
             "Total number of errors",
             new CounterConfiguration { LabelNames = ["error_type"] });
-    
+
     [HttpPost("interfaces")]
     public async Task<IActionResult> PublishInterface([FromBody] InterfacePublishRequest request)
     {
@@ -40,7 +40,7 @@ public class PublicationController(
         if (!result.Success)
         {
             ErrorsTotal.WithLabels("publish_failed").Inc();
-                
+
             return string.IsNullOrEmpty(result.Error)
                 ? BadRequest(new { Success = false, Error = "Unknown error" })
                 : BadRequest(new { Success = false, Error = result.Error });
@@ -58,7 +58,7 @@ public class PublicationController(
             result.InterfaceType
         });
     }
-    
+
     [HttpGet("health")]
     public IActionResult Health()
     {

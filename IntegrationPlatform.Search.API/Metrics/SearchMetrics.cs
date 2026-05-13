@@ -4,14 +4,12 @@ namespace IntegrationPlatform.Search.API.Metrics;
 
 public static class SearchMetrics
 {
-    // Количество поисковых запросов
     public static readonly Counter SearchQueriesTotal = Prometheus.Metrics
-        .CreateCounter("search_queries_total", 
+        .CreateCounter("search_queries_total",
             "Total number of search queries");
     
-    // Время выполнения поиска
     public static readonly Histogram SearchDuration = Prometheus.Metrics
-        .CreateHistogram("search_duration_seconds", 
+        .CreateHistogram("search_duration_seconds",
             "Duration of search queries",
             new HistogramConfiguration
             {

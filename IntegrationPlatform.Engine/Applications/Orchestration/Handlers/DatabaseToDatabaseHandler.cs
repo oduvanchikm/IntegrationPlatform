@@ -83,7 +83,7 @@ public class DatabaseToDatabaseHandler(
             {
                 if (!await IsConnectionStillActive(sourceDb.Id, targetDb.Id))
                 {
-                    logger.LogInformation("Connection {SourceId}→{TargetId} no longer exists", 
+                    logger.LogInformation("Connection {SourceId}→{TargetId} no longer exists",
                         sourceDb.Id, targetDb.Id);
                     throw new OperationCanceledException();
                 }

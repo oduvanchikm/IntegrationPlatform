@@ -16,20 +16,20 @@ public class SubscriptionController(ISubscriptionService subscriptionService, IL
 
     private static readonly Gauge ActiveSubscriptions = Prometheus.Metrics
         .CreateGauge("subscriptions_active_total", "Active subscriptions");
-    
+
     private static readonly Counter SubscriptionsDeleted = Prometheus.Metrics
         .CreateCounter("subscriptions_deleted_total", "Total subscriptions deleted");
 
     private static readonly Histogram RequestDuration = Prometheus.Metrics
-        .CreateHistogram("subscription_request_duration_seconds", 
+        .CreateHistogram("subscription_request_duration_seconds",
             "Duration of subscription API requests",
             new HistogramConfiguration { Buckets = [0.01, 0.05, 0.1, 0.5, 1, 2, 5] });
-    
+
     private static readonly Counter ErrorsTotal = Prometheus.Metrics
-        .CreateCounter("subscription_errors_total", 
+        .CreateCounter("subscription_errors_total",
             "Total number of errors in subscription controller",
             new CounterConfiguration { LabelNames = ["error_type"] });
-    
+
     [HttpGet("interfaces")]
     public async Task<IActionResult> GetAllInterfaces()
     {
@@ -43,14 +43,15 @@ public class SubscriptionController(ISubscriptionService subscriptionService, IL
         {
             logger.LogError(ex, "Error getting all interfaces: {Message}", ex.Message);
             ErrorsTotal.WithLabels("get_all_interfaces").Inc();
-            return StatusCode(500, new { 
-                success = false, 
-                error = "Failed to retrieve interfaces", 
-                details = ex.Message 
+            return StatusCode(500, new
+            {
+                success = false,
+                error = "Failed to retrieve interfaces",
+                details = ex.Message
             });
         }
     }
-    
+
     [HttpGet("interfaces/{id}")]
     public async Task<IActionResult> GetInterfaceById(int id)
     {
@@ -58,26 +59,28 @@ public class SubscriptionController(ISubscriptionService subscriptionService, IL
         try
         {
             var interfaceNew = await subscriptionService.GetInterfaceByIdAsync(id);
-            
+
             if (interfaceNew == null)
             {
                 ErrorsTotal.WithLabels("interface_not_found").Inc();
-                return NotFound(new { 
-                    success = false, 
-                    error = $"Interface with ID {id} not found in subscription database" 
+                return NotFound(new
+                {
+                    success = false,
+                    error = $"Interface with ID {id} not found in subscription database"
                 });
             }
-            
+
             return Ok(interfaceNew);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error getting interface by ID {Id}", id);
             ErrorsTotal.WithLabels("get_interface_by_id").Inc();
-            return StatusCode(500, new { 
-                success = false, 
-                error = "Failed to retrieve interface", 
-                details = ex.Message 
+            return StatusCode(500, new
+            {
+                success = false,
+                error = "Failed to retrieve interface",
+                details = ex.Message
             });
         }
     }

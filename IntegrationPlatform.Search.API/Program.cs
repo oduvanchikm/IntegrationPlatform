@@ -1,6 +1,5 @@
 using IntegrationPlatform.Publication.DataAccess;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
-using IntegrationPlatform.Search.API.Metrics;
 using IntegrationPlatform.Search.API.Interfaces;
 using IntegrationPlatform.Search.API.Services;
 using Microsoft.EntityFrameworkCore;

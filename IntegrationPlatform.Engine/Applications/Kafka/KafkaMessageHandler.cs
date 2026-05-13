@@ -1,5 +1,4 @@
 using System.Text.Json;
-using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Engine.Applications.Interfaces;
 using IntegrationPlatform.Engine.Applications.Orchestration;
 using IntegrationPlatform.Engine.Metrics;
@@ -43,10 +42,10 @@ public class KafkaMessageHandler(
             if (config != null && config.Id > 0)
             {
                 logger.LogInformation("SUCCESS: Deserialized OrchestrationConfig with ID: {ConfigId}", config.Id);
-            
+
                 using var scope = serviceProvider.CreateScope();
                 var orchestrationService = scope.ServiceProvider.GetRequiredService<OrchestrationService>();
-            
+
                 await orchestrationService.HandleNewOrchestration(config);
                 logger.LogInformation("SUCCESS: Completed processing config {ConfigId}", config.Id);
             }

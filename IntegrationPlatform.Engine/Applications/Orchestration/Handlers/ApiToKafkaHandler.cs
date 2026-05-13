@@ -4,7 +4,6 @@ using IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
-using NCrontab;
 
 namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 
@@ -71,7 +70,7 @@ public class ApiToKafkaHandler(
             logger.LogError(ex, "Error during API to Kafka transfer");
         }
     }
-    
+
     private async Task<bool> IsConnectionStillActive(int sourceId, int targetId)
     {
         await using var publicationDb = await publicationDbContext.CreateDbContextAsync();

@@ -17,7 +17,7 @@ public class KafkaReader(ILogger<KafkaReader> logger)
             SessionTimeoutMs = 30000,
             MaxPollIntervalMs = 300000,
             EnablePartitionEof = false,
-            Debug = "consumer,cgrp,topic,fetch" 
+            Debug = "consumer,cgrp,topic,fetch"
         };
 
         if (!string.IsNullOrEmpty(kafkaInterface.Username))
@@ -30,7 +30,7 @@ public class KafkaReader(ILogger<KafkaReader> logger)
 
         using var consumer = new ConsumerBuilder<Ignore, string>(config).Build();
         consumer.Subscribe(kafkaInterface.TopicName);
-        logger.LogInformation("Streaming consumer subscribed to topic {Topic} with group {GroupId}", 
+        logger.LogInformation("Streaming consumer subscribed to topic {Topic} with group {GroupId}",
             kafkaInterface.TopicName, config.GroupId);
 
         try
@@ -44,7 +44,8 @@ public class KafkaReader(ILogger<KafkaReader> logger)
                     {
                         consumeResult = consumer.Consume(TimeSpan.FromSeconds(1));
                     }
-                    catch (ConsumeException ex) when (ex.Error.IsLocalError && ex.Error.Code == ErrorCode.Local_TimedOut)
+                    catch (ConsumeException ex) when
+                        (ex.Error.IsLocalError && ex.Error.Code == ErrorCode.Local_TimedOut)
                     {
                         logger.LogDebug("⏱ Consume timeout - no new messages");
                         continue;
@@ -55,12 +56,12 @@ public class KafkaReader(ILogger<KafkaReader> logger)
                         await Task.Delay(1000, cancellationToken);
                         continue;
                     }
-                    
+
                     if (consumeResult?.Message?.Value != null)
                     {
-                        logger.LogInformation("📥 MESSAGE RECEIVED from {Topic} at offset {Offset}", 
+                        logger.LogInformation("📥 MESSAGE RECEIVED from {Topic} at offset {Offset}",
                             kafkaInterface.TopicName, consumeResult.Offset.Value);
-                        
+
                         try
                         {
                             await onMessage(consumeResult.Message.Value);
@@ -69,7 +70,8 @@ public class KafkaReader(ILogger<KafkaReader> logger)
                         }
                         catch (Exception ex)
                         {
-                            logger.LogError(ex, "💥 Error processing message at offset {Offset}", consumeResult.Offset.Value);
+                            logger.LogError(ex, "💥 Error processing message at offset {Offset}",
+                                consumeResult.Offset.Value);
                         }
                     }
                     else

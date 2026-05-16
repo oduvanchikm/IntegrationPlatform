@@ -25,13 +25,13 @@ public class SubscriptionDbContext(DbContextOptions<SubscriptionDbContext> optio
         modelBuilder.Entity<Product>().ToTable("Product");
 
         modelBuilder.ApplyConfiguration(new DataInterfaceConfiguration());
-        
+
         modelBuilder.ApplyConfiguration(new DatabaseInterfaceConfiguration());
         modelBuilder.ApplyConfiguration(new KafkaInterfaceConfiguration());
         modelBuilder.ApplyConfiguration(new ApiInterfaceConfiguration());
-        
+
         modelBuilder.ApplyConfiguration(new ProductConfiguration());
-        
+
         modelBuilder.ApplyConfiguration(new OrchestrationConfigConfiguration());
 
         base.OnModelCreating(modelBuilder);

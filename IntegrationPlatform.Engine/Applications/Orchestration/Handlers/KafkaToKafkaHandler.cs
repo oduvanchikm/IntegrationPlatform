@@ -1,8 +1,10 @@
 using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
+using IntegrationPlatform.Engine.Metrics;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
+using Prometheus;
 
 namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 
@@ -23,9 +25,9 @@ public class KafkaToKafkaHandler(
             logger.LogInformation("MESSAGE RECEIVED from {Topic}: {Preview}",
                 source.TopicName,
                 message.Length > 100 ? message[..100] + "..." : message);
-            
+
             logger.LogDebug("Received message from Kafka topic {Topic}", source.TopicName);
-            
+
             try
             {
                 await kafkaWriter.WriteToKafkaAsync(target, new List<string> { message });
@@ -50,74 +52,47 @@ public class KafkaToKafkaHandler(
         return sourceExists && targetExists;
     }
 
-    public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface)
+    public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface,
+        CancellationToken cancellationToken = default)
     {
         logger.LogInformation("========== KAFKA TO KAFKA HANDLER ==========");
 
-        var sourceKafka = publicationInterface as KafkaInterface;
-        var targetKafka = subscriptionInterface as KafkaInterface;
+        var pattern = "KafkaToKafka";
+        using var timer = EngineMetrics.ProcessingDuration.WithLabels(pattern).NewTimer();
 
-        if (sourceKafka == null || targetKafka == null)
+        try
         {
-            logger.LogError("Source or target is not KafkaInterface");
-            return;
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var sourceKafka = publicationInterface as KafkaInterface;
+            var targetKafka = subscriptionInterface as KafkaInterface;
+
+            if (sourceKafka == null || targetKafka == null)
+            {
+                logger.LogError("Source or target is not KafkaInterface");
+                return;
+            }
+
+            logger.LogInformation("Source Kafka: {BootstrapServers}, Topic: {Topic}",
+                sourceKafka.BootstrapServers, sourceKafka.TopicName);
+            logger.LogInformation("Target Kafka: {BootstrapServers}, Topic: {Topic}",
+                targetKafka.BootstrapServers, targetKafka.TopicName);
+
+            if (!await IsConnectionStillActive(sourceKafka.Id, targetKafka.Id))
+            {
+                logger.LogInformation("Connection {SourceId}→{TargetId} no longer exists, stopping streaming",
+                    sourceKafka.Id, targetKafka.Id);
+                return;
+            }
+
+            await StartStreaming(sourceKafka, targetKafka, cancellationToken);
+            EngineMetrics.EventsProcessed.WithLabels(pattern).Inc();
         }
-
-        logger.LogInformation("Source Kafka: {BootstrapServers}, Topic: {Topic}",
-            sourceKafka.BootstrapServers, sourceKafka.TopicName);
-        logger.LogInformation("Target Kafka: {BootstrapServers}, Topic: {Topic}",
-            targetKafka.BootstrapServers, targetKafka.TopicName);
-
-        var taskKey = GetTaskKey(sourceKafka.Id, targetKafka.Id);
-
-        if (_activeTasks.TryRemove(taskKey, out var existingCts))
+        catch (Exception ex)
         {
-            existingCts.Cancel();
-            logger.LogInformation("Stopped existing streaming for key {TaskKey}", taskKey);
-            await Task.Delay(1000);
+            logger.LogError(ex, "Error while processing Kafka message");
+            EngineMetrics.ProcessingErrors.WithLabels(pattern, "execution_error").Inc();
+            throw;
         }
-
-        var cts = new CancellationTokenSource();
-        _activeTasks[taskKey] = cts;
-
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                if (!await IsConnectionStillActive(sourceKafka.Id, targetKafka.Id))
-                {
-                    logger.LogInformation("Connection {SourceId}→{TargetId} no longer exists, stopping streaming",
-                        sourceKafka.Id, targetKafka.Id);
-                    return;
-                }
-
-                await StartStreaming(sourceKafka, targetKafka, cts.Token);
-
-                if (!cts.Token.IsCancellationRequested)
-                {
-                    logger.LogInformation("Streaming ended, reconnecting in 5 seconds...");
-                    await Task.Delay(5000, cts.Token);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                logger.LogInformation("Streaming task for key {TaskKey} was cancelled", taskKey);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error in streaming task for key {TaskKey}", taskKey);
-            }
-            finally
-            {
-                _activeTasks.TryRemove(taskKey, out _);
-            }
-        }, cts.Token);
-
-        logger.LogInformation("Kafka to Kafka streaming started with key: {TaskKey}", taskKey);
-    }
-    
-    public static void StopTask(int sourceId, int targetId)
-    {
-        BaseBatchHandler.StopTask(sourceId, targetId);
     }
 }

@@ -1,9 +1,10 @@
 using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
+using IntegrationPlatform.Engine.Metrics;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
-using NCrontab;
+using Prometheus;
 
 namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 
@@ -56,40 +57,56 @@ public class DatabaseToKafkaHandler(
     }
 
     public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface,
-        string scheduleCron)
+        string scheduleCron, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("========== DATABASE TO KAFKA HANDLER ==========");
 
-        var sourceDb = publicationInterface as DatabaseInterface;
-        var targetKafka = subscriptionInterface as KafkaInterface;
+        var pattern = "DatabaseToKafka";
+        using var timer = EngineMetrics.ProcessingDuration.WithLabels(pattern).NewTimer();
 
-        if (sourceDb == null || targetKafka == null)
+        try
         {
-            logger.LogError("Source is not Database or Target is not Kafka");
-            return;
-        }
+            cancellationToken.ThrowIfCancellationRequested();
 
-        logger.LogInformation("Source DB: {Host}:{Port}/{Database}.{Scheme}",
-            sourceDb.Host, sourceDb.Port, sourceDb.DatabaseName, sourceDb.Scheme);
-        logger.LogInformation("Target Kafka: {BootstrapServers}, Topic={Topic}",
-            targetKafka.BootstrapServers, targetKafka.TopicName);
+            var sourceDb = publicationInterface as DatabaseInterface;
+            var targetKafka = subscriptionInterface as KafkaInterface;
 
-        if (string.IsNullOrEmpty(scheduleCron) || scheduleCron == "* * * * *")
-        {
-            await TransferData(sourceDb, targetKafka);
-            return;
-        }
-
-        await RunScheduledAsync(sourceDb.Id, targetKafka.Id, scheduleCron, async (cancellationToken) =>
-        {
-            if (!await IsConnectionStillActive(sourceDb.Id, targetKafka.Id))
+            if (sourceDb == null || targetKafka == null)
             {
-                logger.LogInformation("Connection {SourceId}→{TargetId} no longer exists",
-                    sourceDb.Id, targetKafka.Id);
-                throw new OperationCanceledException();
+                logger.LogError("Source is not Database or Target is not Kafka");
+                return;
             }
 
-            await TransferData(sourceDb, targetKafka);
-        });
+            logger.LogInformation("Source DB: {Host}:{Port}/{Database}.{Scheme}",
+                sourceDb.Host, sourceDb.Port, sourceDb.DatabaseName, sourceDb.Scheme);
+            logger.LogInformation("Target Kafka: {BootstrapServers}, Topic={Topic}",
+                targetKafka.BootstrapServers, targetKafka.TopicName);
+
+            if (string.IsNullOrEmpty(scheduleCron) || scheduleCron == "* * * * *")
+            {
+                await TransferData(sourceDb, targetKafka);
+                return;
+            }
+
+            await RunScheduledAsync(sourceDb.Id, targetKafka.Id, scheduleCron, async (token) =>
+            {
+                token.ThrowIfCancellationRequested();
+                if (!await IsConnectionStillActive(sourceDb.Id, targetKafka.Id))
+                {
+                    logger.LogInformation("Connection {SourceId}→{TargetId} no longer exists",
+                        sourceDb.Id, targetKafka.Id);
+                    throw new OperationCanceledException();
+                }
+
+                await TransferData(sourceDb, targetKafka);
+            }, cancellationToken);
+            EngineMetrics.EventsProcessed.WithLabels(pattern).Inc();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error during database to Kafka transfer");
+            EngineMetrics.ProcessingErrors.WithLabels(pattern, "execution_error").Inc();
+            throw;
+        }
     }
 }

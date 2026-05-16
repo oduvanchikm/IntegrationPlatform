@@ -1,8 +1,9 @@
+using IntegrationPlatform.Common.Enums;
 using IntegrationPlatform.Subscription.API.Interfaces;
 using IntegrationPlatform.Subscription.API.Services;
-using IntegrationPlatform.Subscription.DataAccess;
 using IntegrationPlatform.Subscription.API.Metrics;
 using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
+using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
 using Prometheus;
 using Serilog;
@@ -23,28 +24,18 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSubscriptionDbContext(
-    builder.Configuration.GetConnectionString("SubscriptionDbContext"));
-
 builder.Services.AddDbContextFactory<SubscriptionDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("SubscriptionDbContext"));
 });
 
+builder.Services.AddDbContextFactory<PublicationDbContext>(options =>
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("PublicationDbContext"));
+});
+
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
-
-builder.Services.AddHttpClient("SearchApi", client =>
-{
-    client.BaseAddress = new Uri("http://search-api:8080");
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
-    client.Timeout = TimeSpan.FromSeconds(30);
-});
-
-builder.Services.AddHttpClient("EngineApi", client =>
-{
-    client.BaseAddress = new Uri("http://integration-engine:8080");
-    client.Timeout = TimeSpan.FromSeconds(5);
-});
+builder.Services.AddScoped<IInterfaceService, InterfaceService>();
 
 var app = builder.Build();
 
@@ -53,26 +44,33 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
     dbContext.Database.EnsureCreated();
 
-    UpdateSubscriptionMetrics(dbContext);
+    await UpdateSubscriptionMetrics(dbContext, CancellationToken.None);
 }
+
+var cts = new CancellationTokenSource();
+AppDomain.CurrentDomain.ProcessExit += (s, e) => cts.Cancel();
 
 _ = Task.Run(async () =>
 {
-    while (true)
+    while (!cts.Token.IsCancellationRequested)
     {
-        await Task.Delay(30000);
+        await Task.Delay(30000, cts.Token);
         try
         {
             using var scope = app.Services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
-            UpdateSubscriptionMetrics(dbContext);
+            await UpdateSubscriptionMetrics(dbContext, cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            break;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error updating metrics: {ex.Message}");
         }
     }
-});
+}, cts.Token);
 
 app.UseSwagger();
 app.UseSwaggerUI();
@@ -85,35 +83,32 @@ app.UseCors(policy => policy
 app.UseAuthorization();
 
 app.MapControllers();
-app.UseStaticFiles();
-
-app.Urls.Add("http://0.0.0.0:8080");
 
 app.UseHttpMetrics();
 app.MapMetrics();
 
-app.Run();
+await app.RunAsync();
 
 
-void UpdateSubscriptionMetrics(SubscriptionDbContext dbContext)
+async Task UpdateSubscriptionMetrics(SubscriptionDbContext dbContext, CancellationToken ct = default)
 {
-    var totalProducts = dbContext.Products.Count();
-    var totalInterfaces = dbContext.DataInterfaces.Count();
-    var activeInterfaces =
-        dbContext.DataInterfaces.Count(d => d.Status == IntegrationPlatform.Common.Enums.ConnectionStatus.Active);
-    var draftInterfaces =
-        dbContext.DataInterfaces.Count(d => d.Status == IntegrationPlatform.Common.Enums.ConnectionStatus.Draft);
-    var deprecatedInterfaces =
-        dbContext.DataInterfaces.Count(d => d.Status == IntegrationPlatform.Common.Enums.ConnectionStatus.Deprecated);
+    var totalProducts = await dbContext.Products.CountAsync(ct);
+    var totalInterfaces = await dbContext.DataInterfaces.CountAsync(ct);
+    var activeInterfaces = await dbContext.DataInterfaces
+        .CountAsync(d => d.Status == ConnectionStatus.Active, ct);
+    var draftInterfaces = await dbContext.DataInterfaces
+        .CountAsync(d => d.Status == ConnectionStatus.Draft, ct);
+    var deprecatedInterfaces = await dbContext.DataInterfaces
+        .CountAsync(d => d.Status == ConnectionStatus.Deprecated, ct);
 
-    var apiInterfaces =
-        dbContext.DataInterfaces.Count(d => d.InterfaceType == IntegrationPlatform.Common.Enums.InterfaceType.Api);
-    var kafkaInterfaces =
-        dbContext.DataInterfaces.Count(d => d.InterfaceType == IntegrationPlatform.Common.Enums.InterfaceType.Kafka);
-    var databaseInterfaces =
-        dbContext.DataInterfaces.Count(d => d.InterfaceType == IntegrationPlatform.Common.Enums.InterfaceType.Db);
+    var apiInterfaces = await dbContext.DataInterfaces
+        .CountAsync(d => d.InterfaceType == InterfaceType.Api, ct);
+    var kafkaInterfaces = await dbContext.DataInterfaces
+        .CountAsync(d => d.InterfaceType == InterfaceType.Kafka, ct);
+    var databaseInterfaces = await dbContext.DataInterfaces
+        .CountAsync(d => d.InterfaceType == InterfaceType.Db, ct);
 
-    var totalConfigs = dbContext.OrchestrationConfigs.Count();
+    var totalConfigs = await dbContext.OrchestrationConfigs.CountAsync(ct);
 
     SubscriptionMetrics.TotalProducts.Set(totalProducts);
     SubscriptionMetrics.TotalInterfaces.Set(totalInterfaces);

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IntegrationPlatform.Search.API.Services;
 
-public class SearchService(IDbContextFactory<PublicationDbContext> publicationContext) : ISearchService
+public class SearchService(IDbContextFactory<PublicationDbContext> publicationContext, ILogger<SearchService> logger) : ISearchService
 {
     public async Task<List<InterfaceSearchResult>> SearchInterfacesByNameProductAsync(string? productName)
     {
@@ -118,136 +118,133 @@ public class SearchService(IDbContextFactory<PublicationDbContext> publicationCo
     {
         await using var context = await publicationContext.CreateDbContextAsync();
 
-        var interfaces = context.DataInterfaces
-            .Include(p => p.Product)
-            .Where(di => di.Status == ConnectionStatus.Active)
-            .AsQueryable();
+        var query = from di in context.DataInterfaces
+            join api in context.ApiInterfaces on di.Id equals api.Id into apiJoin
+            from api in apiJoin.DefaultIfEmpty()
+            join kafka in context.KafkaInterfaces on di.Id equals kafka.Id into kafkaJoin
+            from kafka in kafkaJoin.DefaultIfEmpty()
+            join db in context.DatabaseInterfaces on di.Id equals db.Id into dbJoin
+            from db in dbJoin.DefaultIfEmpty()
+            where di.Status == ConnectionStatus.Active
+            select new { di, api, kafka, db };
+
 
         if (!string.IsNullOrEmpty(productName))
         {
-            interfaces = interfaces.Where(di => di.Product.NameProduct.Contains(productName));
+            query = query.Where(x => x.di.Product.NameProduct.Contains(productName));
         }
 
         if (!string.IsNullOrEmpty(interfaceName))
         {
-            interfaces = interfaces.Where(di => di.Name.Contains(interfaceName));
+            query = query.Where(x => x.di.Name.Contains(interfaceName));
         }
 
         if (interfaceType.HasValue)
         {
-            interfaces = interfaces.Where(di => di.InterfaceType == interfaceType.Value);
+            query = query.Where(x => x.di.InterfaceType == interfaceType.Value);
         }
 
-        var baseResults = await interfaces.ToListAsync();
-        var result = new List<InterfaceSearchResult>();
-
-        foreach (var di in baseResults)
-        {
-            var searchResult = new InterfaceSearchResult
+        var results = await query
+            .OrderBy(x => x.di.Product.NameProduct)
+            .ThenBy(x => x.di.Name)
+            .Select(x => new InterfaceSearchResult
             {
-                Id = di.Id,
-                Name = di.Name,
-                Description = di.Description,
-                InterfaceType = di.InterfaceType,
-                ConnectionStatus = di.Status,
-                ProductName = di.Product?.NameProduct,
-                ProductId = di.ProductId
-            };
+                Id = x.di.Id,
+                Name = x.di.Name,
+                Description = x.di.Description,
+                InterfaceType = x.di.InterfaceType,
+                ConnectionStatus = x.di.Status,
+                ProductName = x.di.Product.NameProduct,
+                ProductId = x.di.ProductId,
+                Host = x.api != null ? x.api.Host : (x.db != null ? x.db.Host : null),
+                Port = x.api != null ? x.api.Port : (x.db != null ? x.db.Port : null),
+                Endpoint = x.api != null ? x.api.Endpoint : null,
+                Token = x.api != null ? x.api.Token : null,
+                BootstrapServers = x.kafka != null ? x.kafka.BootstrapServers : null,
+                TopicName = x.kafka != null ? x.kafka.TopicName : null,
+                DatabaseName = x.db != null ? x.db.DatabaseName : null,
+                Scheme = x.db != null ? x.db.Scheme : null
+            })
+            .ToListAsync();
 
-            switch (di.InterfaceType)
-            {
-                case InterfaceType.Api:
-                    var apiData = await context.ApiInterfaces.FirstOrDefaultAsync(a => a.Id == di.Id);
-                    if (apiData != null)
-                    {
-                        searchResult.Host = apiData.Host;
-                        searchResult.Port = apiData.Port;
-                        searchResult.Endpoint = apiData.Endpoint;
-                    }
-
-                    break;
-
-                case InterfaceType.Kafka:
-                    var kafkaData = await context.KafkaInterfaces
-                        .FirstOrDefaultAsync(k => k.Id == di.Id);
-                    if (kafkaData != null)
-                    {
-                        searchResult.BootstrapServers = kafkaData.BootstrapServers;
-                        searchResult.TopicName = kafkaData.TopicName;
-                    }
-
-                    break;
-
-                case InterfaceType.Db:
-                    var dbData = await context.DatabaseInterfaces
-                        .FirstOrDefaultAsync(d => d.Id == di.Id);
-                    if (dbData != null)
-                    {
-                        searchResult.Host = dbData.Host;
-                        searchResult.Port = dbData.Port;
-                        searchResult.DatabaseName = dbData.DatabaseName;
-                        searchResult.Scheme = dbData.Scheme;
-                    }
-
-                    break;
-            }
-
-            result.Add(searchResult);
-        }
-
-        return result;
+        return results;
     }
 
     public async Task<InterfaceDetailsDto?> GetInterfaceByIdAsync(int id)
     {
         await using var context = await publicationContext.CreateDbContextAsync();
 
-        var interface_ = await context.DataInterfaces
-            .Include(di => di.Product)
-            .FirstOrDefaultAsync(di => di.Id == id && di.Status == ConnectionStatus.Active);
+        var result = await (from di in context.DataInterfaces
+            join api in context.ApiInterfaces on di.Id equals api.Id into apiJoin
+            from api in apiJoin.DefaultIfEmpty()
+            join kafka in context.KafkaInterfaces on di.Id equals kafka.Id into kafkaJoin
+            from kafka in kafkaJoin.DefaultIfEmpty()
+            join db in context.DatabaseInterfaces on di.Id equals db.Id into dbJoin
+            from db in dbJoin.DefaultIfEmpty()
+            where di.Id == id && di.Status == ConnectionStatus.Active
+            select new
+            {
+                di,
+                api,
+                kafka,
+                db
+            }).FirstOrDefaultAsync();
 
-        if (interface_ == null)
+        if (result == null)
             return null;
 
         var dto = new InterfaceDetailsDto
         {
-            Id = interface_.Id,
-            Name = interface_.Name,
-            Description = interface_.Description,
-            InterfaceType = interface_.InterfaceType.ToString(),
-            Status = interface_.Status.ToString(),
-            ProductId = interface_.ProductId,
-            ProductName = interface_.Product?.NameProduct ?? "Unknown"
+            Id = result.di.Id,
+            Name = result.di.Name,
+            Description = result.di.Description,
+            InterfaceType = result.di.InterfaceType.ToString(),
+            Status = result.di.Status.ToString(),
+            ProductId = result.di.ProductId,
+            ProductName = result.di.Product?.NameProduct ?? "Unknown"
         };
 
-        switch (interface_)
+        if (result.api != null)
         {
-            case KafkaInterface kafka:
-                dto.BootstrapServers = kafka.BootstrapServers;
-                dto.TopicName = kafka.TopicName;
-                dto.Username = kafka.Username;
-                dto.Password = kafka.Password;
-                break;
-
-            case ApiInterface api:
-                dto.Host = api.Host;
-                dto.Port = api.Port;
-                dto.Endpoint = api.Endpoint;
-                dto.Token = api.Token;
-                dto.Username = api.Username;
-                dto.Password = api.Password;
-                break;
-
-            case DatabaseInterface db:
-                dto.Host = db.Host;
-                dto.Port = db.Port;
-                dto.DatabaseName = db.DatabaseName;
-                dto.Scheme = db.Scheme;
-                dto.Username = db.Username;
-                dto.Password = db.Password;
-                break;
+            dto.Host = result.api.Host;
+            dto.Port = result.api.Port;
+            dto.Endpoint = result.api.Endpoint;
+            dto.Token = result.api.Token;
+            dto.Username = result.api.Username;
+            dto.Password = result.api.Password;
+        }
+        else if (result.kafka != null)
+        {
+            dto.BootstrapServers = result.kafka.BootstrapServers;
+            dto.TopicName = result.kafka.TopicName;
+            dto.Username = result.kafka.Username;
+            dto.Password = result.kafka.Password;
+        }
+        else if (result.db != null)
+        {
+            dto.Host = result.db.Host;
+            dto.Port = result.db.Port;
+            dto.DatabaseName = result.db.DatabaseName;
+            dto.Scheme = result.db.Scheme;
+            dto.Username = result.db.Username;
+            dto.Password = result.db.Password;
         }
 
         return dto;
+    }
+    
+    public async Task<bool> CheckDatabaseHealthAsync()
+    {
+        try
+        {
+            await using var context = await publicationContext.CreateDbContextAsync();
+            var canConnect = await context.Database.CanConnectAsync();
+            return canConnect;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Database health check failed");
+            return false;
+        }
     }
 }

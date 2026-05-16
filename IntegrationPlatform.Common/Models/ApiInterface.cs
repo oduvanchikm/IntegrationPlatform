@@ -4,7 +4,7 @@ namespace IntegrationPlatform.Common.Models;
 
 public class ApiInterface : DataInterface
 {
-    public string Host { get; set; }
+    public string? Host { get; set; }
     public string Port { get; set; }
     public string Endpoint { get; set; }
     public string Username { get; set; }

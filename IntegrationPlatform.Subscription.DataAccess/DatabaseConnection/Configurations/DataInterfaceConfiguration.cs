@@ -33,7 +33,7 @@ public class DataInterfaceConfiguration : IEntityTypeConfiguration<DataInterface
             .WithMany(p => p.Interfaces)
             .HasForeignKey(di => di.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
-        
+
         builder.HasOne(di => di.OrchestrationConfig)
             .WithOne(oc => oc.DataInterface)
             .HasForeignKey<OrchestrationConfig>(oc => oc.InterfaceSubscriptionId)

@@ -1,9 +1,10 @@
 using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
+using IntegrationPlatform.Engine.Metrics;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
-using NCrontab;
+using Prometheus;
 
 namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 
@@ -51,40 +52,57 @@ public class ApiToApiHandler(
     }
 
     public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface,
-        string scheduleCron)
+        string scheduleCron, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("========== API TO API HANDLER ==========");
+        var pattern = "ApiToApi";
+        using var timer = EngineMetrics.ProcessingDuration.WithLabels(pattern).NewTimer();
 
-        var sourceApi = publicationInterface as ApiInterface;
-        var targetApi = subscriptionInterface as ApiInterface;
-
-        if (sourceApi == null || targetApi == null)
+        try
         {
-            logger.LogError("Source or target is not API");
-            return;
-        }
+            cancellationToken.ThrowIfCancellationRequested();
 
-        logger.LogInformation("Source API: {Host}:{Port}{Endpoint}",
-            sourceApi.Host, sourceApi.Port, sourceApi.Endpoint);
-        logger.LogInformation("Target API: {Host}:{Port}{Endpoint}",
-            targetApi.Host, targetApi.Port, targetApi.Endpoint);
+            var sourceApi = publicationInterface as ApiInterface;
+            var targetApi = subscriptionInterface as ApiInterface;
 
-        if (string.IsNullOrEmpty(scheduleCron) || scheduleCron == "* * * * *")
-        {
-            await TransferData(sourceApi, targetApi);
-            return;
-        }
-
-        await RunScheduledAsync(sourceApi.Id, targetApi.Id, scheduleCron, async (cancellationToken) =>
-        {
-            if (!await IsConnectionStillActive(sourceApi.Id, targetApi.Id))
+            if (sourceApi == null || targetApi == null)
             {
-                logger.LogInformation("Connection {SourceId}→{TargetId} no longer exists",
-                    sourceApi.Id, targetApi.Id);
-                throw new OperationCanceledException();
+                logger.LogError("Source or target is not API");
+                return;
             }
 
-            await TransferData(sourceApi, targetApi);
-        });
+            logger.LogInformation("Source API: {Host}:{Port}{Endpoint}",
+                sourceApi.Host, sourceApi.Port, sourceApi.Endpoint);
+            logger.LogInformation("Target API: {Host}:{Port}{Endpoint}",
+                targetApi.Host, targetApi.Port, targetApi.Endpoint);
+
+            if (string.IsNullOrEmpty(scheduleCron) || scheduleCron == "* * * * *")
+            {
+                await TransferData(sourceApi, targetApi);
+                return;
+            }
+
+            await RunScheduledAsync(sourceApi.Id, targetApi.Id, scheduleCron, async (token) =>
+            {
+                token.ThrowIfCancellationRequested();
+
+                if (!await IsConnectionStillActive(sourceApi.Id, targetApi.Id))
+                {
+                    logger.LogInformation("Connection {SourceId}→{TargetId} no longer exists",
+                        sourceApi.Id, targetApi.Id);
+                    throw new OperationCanceledException();
+                }
+
+                await TransferData(sourceApi, targetApi);
+            }, cancellationToken);
+
+            EngineMetrics.EventsProcessed.WithLabels(pattern).Inc();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error during API to API transfer");
+            EngineMetrics.ProcessingErrors.WithLabels(pattern, "execution_error").Inc();
+            throw;
+        }
     }
 }

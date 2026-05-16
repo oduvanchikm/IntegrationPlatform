@@ -2,9 +2,9 @@ using IntegrationPlatform.Common.Models;
 
 namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
 
-public class ApiReader(ILogger<ApiReader> logger)
+public class ApiReader(ILogger<ApiReader> logger, IHttpClientFactory httpClientFactory)
 {
-    private readonly HttpClient _httpClient = new();
+    private readonly HttpClient _httpClient = httpClientFactory.CreateClient("ApiClient");
 
     public async Task<string> ReadFromApiAsync(ApiInterface apiInterface)
     {
@@ -15,10 +15,10 @@ public class ApiReader(ILogger<ApiReader> logger)
         {
             var response = await _httpClient.GetAsync(url);
             var content = await response.Content.ReadAsStringAsync();
-        
+
             logger.LogInformation("API Response Status: {StatusCode}", response.StatusCode);
             logger.LogInformation("API Response Content: {Content}", content);
-        
+
             response.EnsureSuccessStatusCode();
             return content;
         }

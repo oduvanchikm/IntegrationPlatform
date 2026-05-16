@@ -5,25 +5,18 @@ namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 
 public abstract class BaseBatchHandler(ILogger logger)
 {
-    protected static readonly ConcurrentDictionary<int, CancellationTokenSource> _activeTasks = new();
-    protected int GetTaskKey(int sourceId, int targetId) => sourceId + targetId;
+    private string GetTaskKey(int sourceId, int targetId) => $"{sourceId}:{targetId}";
 
     protected async Task RunScheduledAsync(
         int sourceId,
         int targetId,
         string scheduleCron,
-        Func<CancellationToken, Task> executeAction)
+        Func<CancellationToken, Task> executeAction,
+        CancellationToken externalCancellationToken = default)
     {
         var taskKey = GetTaskKey(sourceId, targetId);
 
-        if (_activeTasks.TryRemove(taskKey, out var existingCts))
-        {
-            existingCts.Cancel();
-            logger.LogInformation("Stopped existing task for key {TaskKey}", taskKey);
-        }
-
-        var cts = new CancellationTokenSource();
-        _activeTasks[taskKey] = cts;
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(externalCancellationToken);
 
         _ = Task.Run(async () =>
         {
@@ -54,19 +47,10 @@ public abstract class BaseBatchHandler(ILogger logger)
             }
             finally
             {
-                _activeTasks.TryRemove(taskKey, out _);
+                cts.Dispose();
             }
         }, cts.Token);
 
         logger.LogInformation("Scheduled task started with cron: {Cron}, key: {TaskKey}", scheduleCron, taskKey);
-    }
-
-    public static void StopTask(int sourceId, int targetId)
-    {
-        var taskKey = sourceId + targetId;
-        if (_activeTasks.TryRemove(taskKey, out var cts))
-        {
-            cts.Cancel();
-        }
     }
 }

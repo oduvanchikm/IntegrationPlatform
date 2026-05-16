@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using IntegrationPlatform.Common.Models;
 using Npgsql;
@@ -14,7 +13,8 @@ public class DatabaseReader(ILogger<DatabaseReader> logger)
         string? query = null,
         CancellationToken cancellationToken = default)
     {
-        var connString = $"Host={dbInterface.Host};Port={dbInterface.Port};Database={dbInterface.DatabaseName};Username={dbInterface.Username};Password={dbInterface.Password}";
+        var connString =
+            $"Host={dbInterface.Host};Port={dbInterface.Port};Database={dbInterface.DatabaseName};Username={dbInterface.Username};Password={dbInterface.Password}";
 
         logger.LogInformation("Reading from database: {Database}.{Schema} in batches of {BatchSize}",
             dbInterface.DatabaseName, dbInterface.Scheme, batchSize);
@@ -53,10 +53,10 @@ public class DatabaseReader(ILogger<DatabaseReader> logger)
                         var value = reader.GetValue(i);
                         row[reader.GetName(i)] = value;
                     }
-                    
+
                     var json = JsonSerializer.Serialize(row);
                     batch.Add(json);
-                    
+
                     if (reader.GetName(0) == "id")
                     {
                         var idValue = reader.GetValue(0);
@@ -66,7 +66,7 @@ public class DatabaseReader(ILogger<DatabaseReader> logger)
 
                 if (batch.Any())
                 {
-                    logger.LogDebug("Read batch {BatchNumber}: {Count} records, lastId={LastId}", 
+                    logger.LogDebug("Read batch {BatchNumber}: {Count} records, lastId={LastId}",
                         batchNumber, batch.Count, lastId);
                     await onBatch(batch);
                 }
@@ -82,7 +82,7 @@ public class DatabaseReader(ILogger<DatabaseReader> logger)
             }
         }
 
-        logger.LogInformation("Completed reading from database: {TotalBatches} batches, lastId={LastId}", 
+        logger.LogInformation("Completed reading from database: {TotalBatches} batches, lastId={LastId}",
             batchNumber, lastId);
     }
 }

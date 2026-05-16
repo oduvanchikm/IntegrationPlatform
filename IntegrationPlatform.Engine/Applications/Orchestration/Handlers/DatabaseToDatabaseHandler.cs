@@ -1,8 +1,10 @@
 using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
+using IntegrationPlatform.Engine.Metrics;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
+using Prometheus;
 
 namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 
@@ -55,41 +57,56 @@ public class DatabaseToDatabaseHandler(
     }
 
     public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface,
-        string scheduleCron)
+        string scheduleCron, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("========== DATABASE TO DATABASE HANDLER ==========");
+        var pattern = "DatabaseToDatabase";
+        using var timer = EngineMetrics.ProcessingDuration.WithLabels(pattern).NewTimer();
 
-        var sourceDb = publicationInterface as DatabaseInterface;
-        var targetDb = subscriptionInterface as DatabaseInterface;
-
-        if (sourceDb == null || targetDb == null)
+        try
         {
-            logger.LogError("Source or target is not DatabaseInterface");
-            return;
-        }
+            cancellationToken.ThrowIfCancellationRequested();
 
-        logger.LogInformation("Source DB: {Host}:{Port}/{Database}.{Scheme}",
-            sourceDb.Host, sourceDb.Port, sourceDb.DatabaseName, sourceDb.Scheme);
-        logger.LogInformation("Target DB: {Host}:{Port}/{Database}.{Scheme}",
-            targetDb.Host, targetDb.Port, targetDb.DatabaseName, targetDb.Scheme);
+            var sourceDb = publicationInterface as DatabaseInterface;
+            var targetDb = subscriptionInterface as DatabaseInterface;
 
-        if (string.IsNullOrEmpty(scheduleCron) || scheduleCron == "* * * * *")
-        {
-            await CopyDataInBatches(sourceDb, targetDb);
-            return;
-        }
-
-        await RunScheduledAsync(sourceDb.Id, targetDb.Id, scheduleCron, async (cancellationToken) =>
+            if (sourceDb == null || targetDb == null)
             {
-                if (!await IsConnectionStillActive(sourceDb.Id, targetDb.Id))
-                {
-                    logger.LogInformation("Connection {SourceId}→{TargetId} no longer exists", 
-                        sourceDb.Id, targetDb.Id);
-                    throw new OperationCanceledException();
-                }
-
-                await CopyDataInBatches(sourceDb, targetDb);
+                logger.LogError("Source or target is not DatabaseInterface");
+                return;
             }
-        );
+
+            logger.LogInformation("Source DB: {Host}:{Port}/{Database}.{Scheme}",
+                sourceDb.Host, sourceDb.Port, sourceDb.DatabaseName, sourceDb.Scheme);
+            logger.LogInformation("Target DB: {Host}:{Port}/{Database}.{Scheme}",
+                targetDb.Host, targetDb.Port, targetDb.DatabaseName, targetDb.Scheme);
+
+            if (string.IsNullOrEmpty(scheduleCron) || scheduleCron == "* * * * *")
+            {
+                await CopyDataInBatches(sourceDb, targetDb);
+                return;
+            }
+
+            await RunScheduledAsync(sourceDb.Id, targetDb.Id, scheduleCron, async (token) =>
+                {
+                    token.ThrowIfCancellationRequested();
+                    if (!await IsConnectionStillActive(sourceDb.Id, targetDb.Id))
+                    {
+                        logger.LogInformation("Connection {SourceId}→{TargetId} no longer exists",
+                            sourceDb.Id, targetDb.Id);
+                        throw new OperationCanceledException();
+                    }
+
+                    await CopyDataInBatches(sourceDb, targetDb);
+                }, cancellationToken
+            );
+            EngineMetrics.EventsProcessed.WithLabels(pattern).Inc();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error during running batched copy");
+            EngineMetrics.ProcessingErrors.WithLabels(pattern, "execution_error").Inc();
+            throw;
+        }
     }
 }

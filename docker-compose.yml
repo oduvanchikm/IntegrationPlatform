@@ -356,7 +356,7 @@
       - ConnectionStrings__SubscriptionDbContext=Host=postgres;Port=5432;Database=integration_platform;Username=admin;Password=password;Search Path=subscription
       - Kafka__BootstrapServers=kafka:9092
       - Kafka__GroupId=engine-service
-      - Kafka__Topic=debezium.subscription.OrchestrationConfig
+      - Kafka__Topic=postgres.subscription.OrchestrationConfig
 
       - KafkaSource__BootstrapServers=kafka2:9092
       - KafkaSource__Topic=source-topic
@@ -402,6 +402,7 @@
       - --docker_only=true
       - --housekeeping_interval=10s
     privileged: true
+    restart: unless-stopped
     networks:
       - app-network
   

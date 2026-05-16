@@ -13,4 +13,5 @@ public interface ISearchService
         InterfaceType? interfaceType);
 
     Task<InterfaceDetailsDto?> GetInterfaceByIdAsync(int id);
+    Task<bool> CheckDatabaseHealthAsync();
 }

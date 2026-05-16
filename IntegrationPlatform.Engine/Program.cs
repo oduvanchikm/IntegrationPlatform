@@ -3,25 +3,23 @@ using IntegrationPlatform.Engine.Applications.Kafka;
 using IntegrationPlatform.Engine.Applications.Orchestration;
 using IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 using IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
-using IntegrationPlatform.Publication.DataAccess;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
-using IntegrationPlatform.Subscription.DataAccess;
 using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
 using Prometheus;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-builder.Services.AddPublicationDbContext(
-    builder.Configuration.GetConnectionString("PublicationDbContext"));
+builder.Services.AddHttpClient("ApiClient", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 builder.Services.AddDbContextFactory<PublicationDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("PublicationDbContext"));
 });
 
-builder.Services.AddSubscriptionDbContext(
-    builder.Configuration.GetConnectionString("SubscriptionDbContext"));
 
 builder.Services.AddDbContextFactory<SubscriptionDbContext>(options =>
 {
@@ -58,7 +56,5 @@ var host = builder.Build();
 
 var metricServer = new MetricServer(port: 9091);
 metricServer.Start();
-
-Console.WriteLine("✅ Engine Metrics server started on http://0.0.0.0:9091/metrics");
 
 host.Run();

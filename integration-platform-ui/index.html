@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Integration Platform | Управление интеграциями</title>
+    <title>Integration Platform</title>
     <style>
         * {
             margin: 0;
@@ -305,7 +305,7 @@
     <div id="tab-publish" class="tab-content">
         <div class="dashboard">
             <div class="card">
-                <h2>📋 Регистрация нового интерфейса</h2>
+                <h2>Регистрация нового интерфейса</h2>
                 <form id="publishForm">
                     <div class="grid-2">
                         <div class="form-group">
@@ -852,12 +852,13 @@
             const resp = await fetch('http://localhost:5001/api/Publication/test-connection');
             if (resp.ok) {
                 statusEl.className = 'status online';
-                statusEl.innerHTML = 'Все сервисы работают | Data Mesh Active';
+                statusEl.innerHTML = 'Все сервисы работают';
             } else throw new Error();
         } catch (e) {
             statusEl.className = 'status offline';
-            statusEl.innerHTML = 'Сервисы недоступны — запустите docker-compose up -d';
+            statusEl.innerHTML = 'Сервисы недоступны';
         }
+        
     }
 
     document.getElementById('sourceInterface')?.addEventListener('change', function() {

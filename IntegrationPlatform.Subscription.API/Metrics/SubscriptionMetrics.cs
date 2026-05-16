@@ -43,4 +43,26 @@ public static class SubscriptionMetrics
     public static readonly Gauge TotalOrchestrationConfigs = Prometheus.Metrics
         .CreateGauge("subscription_orchestration_configs_total",
             "Total number of orchestration configurations");
+
+    public static readonly Counter InterfacesCreated = Prometheus.Metrics
+        .CreateCounter("subscription_interfaces_created_total",
+            "Total number of consumer interfaces created",
+            new CounterConfiguration { LabelNames = ["interface_type"] });
+
+    public static readonly Gauge ActiveConsumerInterfaces = Prometheus.Metrics
+        .CreateGauge("subscription_active_consumer_interfaces",
+            "Number of active consumer interfaces");
+
+    public static readonly Counter ErrorsTotal = Prometheus.Metrics
+        .CreateCounter("subscription_interface_errors_total",
+            "Total number of errors in interface controller",
+            new CounterConfiguration { LabelNames = ["error_type"] });
+
+    public static readonly Histogram RequestDuration = Prometheus.Metrics
+        .CreateHistogram("subscription_interface_request_duration_seconds",
+            "Duration of interface API requests",
+            new HistogramConfiguration { Buckets = [0.01, 0.05, 0.1, 0.5, 1, 2, 5] });
+
+    public static readonly Counter SubscriptionsDeleted = Prometheus.Metrics
+        .CreateCounter("subscriptions_deleted_total", "Total subscriptions deleted");
 }

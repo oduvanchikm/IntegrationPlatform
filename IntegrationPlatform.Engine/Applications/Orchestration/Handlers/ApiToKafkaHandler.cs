@@ -1,9 +1,11 @@
 using System.Text.Json;
 using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
+using IntegrationPlatform.Engine.Metrics;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
+using Prometheus;
 
 namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
 
@@ -83,40 +85,58 @@ public class ApiToKafkaHandler(
     }
 
     public async Task ExecuteAsync(DataInterface publicationInterface, DataInterface subscriptionInterface,
-        string scheduleCron)
+        string scheduleCron, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("========== API TO KAFKA HANDLER ==========");
 
-        var sourceApi = publicationInterface as ApiInterface;
-        var targetKafka = subscriptionInterface as KafkaInterface;
+        var pattern = "ApiToKafka";
+        using var timer = EngineMetrics.ProcessingDuration.WithLabels(pattern).NewTimer();
 
-        if (sourceApi == null || targetKafka == null)
+        try
         {
-            logger.LogError("Source is not API or Target is not Kafka");
-            return;
-        }
+            cancellationToken.ThrowIfCancellationRequested();
 
-        logger.LogInformation("Source API: {Host}:{Port}{Endpoint}",
-            sourceApi.Host, sourceApi.Port, sourceApi.Endpoint);
-        logger.LogInformation("Target Kafka: {BootstrapServers}, Topic={Topic}",
-            targetKafka.BootstrapServers, targetKafka.TopicName);
 
-        if (string.IsNullOrEmpty(scheduleCron) || scheduleCron == "* * * * *")
-        {
-            await TransferData(sourceApi, targetKafka);
-            return;
-        }
+            var sourceApi = publicationInterface as ApiInterface;
+            var targetKafka = subscriptionInterface as KafkaInterface;
 
-        await RunScheduledAsync(sourceApi.Id, targetKafka.Id, scheduleCron, async (cancellationToken) =>
-        {
-            if (!await IsConnectionStillActive(sourceApi.Id, targetKafka.Id))
+            if (sourceApi == null || targetKafka == null)
             {
-                logger.LogInformation("Connection {SourceId}→{TargetId} no longer exists",
-                    sourceApi.Id, targetKafka.Id);
-                throw new OperationCanceledException();
+                logger.LogError("Source is not API or Target is not Kafka");
+                return;
             }
 
-            await TransferData(sourceApi, targetKafka);
-        });
+            logger.LogInformation("Source API: {Host}:{Port}{Endpoint}",
+                sourceApi.Host, sourceApi.Port, sourceApi.Endpoint);
+            logger.LogInformation("Target Kafka: {BootstrapServers}, Topic={Topic}",
+                targetKafka.BootstrapServers, targetKafka.TopicName);
+
+            if (string.IsNullOrEmpty(scheduleCron) || scheduleCron == "* * * * *")
+            {
+                await TransferData(sourceApi, targetKafka);
+                return;
+            }
+
+            await RunScheduledAsync(sourceApi.Id, targetKafka.Id, scheduleCron, async (token) =>
+            {
+                token.ThrowIfCancellationRequested();
+                if (!await IsConnectionStillActive(sourceApi.Id, targetKafka.Id))
+                {
+                    logger.LogInformation("Connection {SourceId}→{TargetId} no longer exists",
+                        sourceApi.Id, targetKafka.Id);
+                    throw new OperationCanceledException();
+                }
+
+                await TransferData(sourceApi, targetKafka);
+            }, cancellationToken);
+
+            EngineMetrics.EventsProcessed.WithLabels(pattern).Inc();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error during API to Kafka transfer");
+            EngineMetrics.ProcessingErrors.WithLabels(pattern, "execution_error").Inc();
+            throw;
+        }
     }
 }

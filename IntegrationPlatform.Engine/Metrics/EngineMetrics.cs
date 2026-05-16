@@ -23,14 +23,14 @@ public static class EngineMetrics
                 LabelNames = new[] { "pattern" }
             });
 
+    public static readonly Gauge KafkaConsumerLag = Prometheus.Metrics
+        .CreateGauge("engine_kafka_consumer_lag",
+            "Current consumer lag for Kafka topic",
+            new GaugeConfiguration { LabelNames = new[] { "topic", "partition" } });
+
     public static readonly Gauge ActiveTasks = Prometheus.Metrics
         .CreateGauge("engine_active_tasks",
             "Number of active streaming tasks");
-
-    public static readonly Gauge KafkaLag = Prometheus.Metrics
-        .CreateGauge("engine_kafka_consumer_lag",
-            "Kafka consumer lag by topic",
-            new GaugeConfiguration { LabelNames = new[] { "topic" } });
 
     public static readonly Counter MessagesConsumed = Prometheus.Metrics
         .CreateCounter("engine_kafka_messages_consumed_total",
@@ -40,5 +40,15 @@ public static class EngineMetrics
     public static readonly Counter ConsumerErrors = Prometheus.Metrics
         .CreateCounter("engine_kafka_consumer_errors_total",
             "Total consumer errors",
+            new CounterConfiguration { LabelNames = new[] { "topic", "error_type" } });
+    
+    public static readonly Counter MessagesProduced = Prometheus.Metrics
+        .CreateCounter("engine_kafka_messages_produced_total",
+            "Total messages produced to Kafka",
+            new CounterConfiguration { LabelNames = new[] { "topic" } });
+
+    public static readonly Counter ProduceErrors = Prometheus.Metrics
+        .CreateCounter("engine_kafka_produce_errors_total",
+            "Total produce errors",
             new CounterConfiguration { LabelNames = new[] { "topic", "error_type" } });
 }

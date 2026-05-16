@@ -1,4 +1,3 @@
-using IntegrationPlatform.Publication.DataAccess;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using IntegrationPlatform.Search.API.Interfaces;
 using IntegrationPlatform.Search.API.Services;
@@ -20,9 +19,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddPublicationDbContext(
-    builder.Configuration.GetConnectionString("PublicationDbContext"));
-
 builder.Services.AddDbContextFactory<PublicationDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("PublicationDbContext"));
@@ -43,11 +39,8 @@ app.UseCors(policy => policy
 app.UseAuthorization();
 
 app.MapControllers();
-app.UseStaticFiles();
-
-app.Urls.Add("http://0.0.0.0:8080");
 
 app.UseHttpMetrics();
 app.MapMetrics();
 
-app.Run();
+await app.RunAsync();

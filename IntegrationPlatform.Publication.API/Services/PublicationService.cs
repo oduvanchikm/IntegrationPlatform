@@ -118,4 +118,19 @@ public class PublicationService(
             return new PublicationResult { Success = false, Error = ex.Message };
         }
     }
+    
+    public async Task<bool> CheckDatabaseHealthAsync()
+    {
+        try
+        {
+            await using var context = await dbContextFactory.CreateDbContextAsync();
+            var canConnect = await context.Database.CanConnectAsync();
+            return canConnect;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Database health check failed");
+            return false;
+        }
+    }
 }

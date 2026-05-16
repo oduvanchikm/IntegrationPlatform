@@ -3,9 +3,9 @@ using IntegrationPlatform.Common.Models;
 
 namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
 
-public class ApiWriter(ILogger<ApiWriter> logger)
+public class ApiWriter(ILogger<ApiWriter> logger, IHttpClientFactory httpClientFactory)
 {
-    private readonly HttpClient _httpClient = new();
+    private readonly HttpClient _httpClient = httpClientFactory.CreateClient("ApiClient");
 
     public async Task WriteToApiAsync(ApiInterface apiInterface, List<string> messages)
     {

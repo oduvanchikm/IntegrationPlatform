@@ -1,6 +1,8 @@
+using System.Collections.Concurrent;
 using IntegrationPlatform.Common.Enums;
 using IntegrationPlatform.Common.Models;
 using IntegrationPlatform.Engine.Applications.Orchestration.Handlers;
+using IntegrationPlatform.Engine.Metrics;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
 using IntegrationPlatform.Subscription.DataAccess.DatabaseConnection;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +15,11 @@ public class OrchestrationService(
     IDbContextFactory<SubscriptionDbContext> subscriptionDbContext,
     IServiceProvider serviceProvider)
 {
+    private readonly ConcurrentDictionary<string, CancellationTokenSource> _activeTasks = new();
+
+    private static string GetTaskKey(int sourceId, int targetId, string pattern)
+        => $"{sourceId}_{targetId}_{pattern}";
+
     public async Task HandleNewOrchestration(OrchestrationConfigModel config)
     {
         logger.LogInformation("========== HANDLE NEW ORCHESTRATION ==========");
@@ -117,15 +124,34 @@ public class OrchestrationService(
         logger.LogInformation("Subscription interface found: ID={Id}, Name={Name}, Type={Type}",
             subscriptionInterface.Id, subscriptionInterface.Name, subscriptionInterface.InterfaceType);
 
-        HandleIntegration(config.IntegrationPattern, enrichedPublication, enrichedSubscription, config);
+        await HandleIntegration(config.IntegrationPattern, enrichedPublication, enrichedSubscription, config);
 
         logger.LogInformation("========== HANDLE NEW ORCHESTRATION END ==========");
     }
 
-    private void HandleIntegration(string integrationPattern, DataInterface publicationInterface,
+    private async Task HandleIntegration(string integrationPattern, DataInterface publicationInterface,
         DataInterface subscriptionInterface, OrchestrationConfigModel config)
     {
         logger.LogInformation("HandleIntegration called with pattern: {Pattern}", integrationPattern);
+
+        var taskKey = GetTaskKey(
+            publicationInterface.Id,
+            subscriptionInterface.Id,
+            integrationPattern);
+
+        if (_activeTasks.TryRemove(taskKey, out var existingCts))
+        {
+            logger.LogInformation("Stopping existing task for key {TaskKey}", taskKey);
+            existingCts.Cancel();
+            existingCts.Dispose();
+            await Task.Delay(1000);
+            EngineMetrics.ActiveTasks.Dec();
+        }
+
+        var cts = new CancellationTokenSource();
+        _activeTasks[taskKey] = cts;
+        
+        EngineMetrics.ActiveTasks.Inc();
 
         try
         {
@@ -142,14 +168,15 @@ public class OrchestrationService(
                     {
                         try
                         {
+                            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cts.Token);
                             await apiToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface,
-                                config.ScheduleCron);
+                                config.ScheduleCron, linkedCts.Token);
                         }
                         catch (Exception e)
                         {
                             logger.LogError(e, "ApiToApiHandler.ExecuteAsync failed");
                         }
-                    });
+                    }, cts.Token);
 
                     logger.LogInformation("========== API TO API EXECUTION COMPLETE ==========");
                     break;
@@ -165,14 +192,15 @@ public class OrchestrationService(
                     {
                         try
                         {
+                            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cts.Token);
                             await apiToDatabaseHandler.ExecuteAsync(publicationInterface, subscriptionInterface,
-                                config.ScheduleCron);
+                                config.ScheduleCron, linkedCts.Token);
                         }
                         catch (Exception e)
                         {
                             logger.LogError(e, "ApiToDatabaseHandler.ExecuteAsync failed");
                         }
-                    });
+                    }, cts.Token);
 
                     logger.LogInformation("========== API TO DATABASE EXECUTION COMPLETE ==========");
                     break;
@@ -188,14 +216,15 @@ public class OrchestrationService(
                     {
                         try
                         {
+                            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cts.Token);
                             await apiToKafkaHandler.ExecuteAsync(publicationInterface, subscriptionInterface,
-                                config.ScheduleCron);
+                                config.ScheduleCron, linkedCts.Token);
                         }
                         catch (Exception e)
                         {
                             logger.LogError(e, "ApiToKafkaHandler.ExecuteAsync failed");
                         }
-                    });
+                    }, cts.Token);
 
                     logger.LogInformation("========== API TO KAFKA EXECUTION COMPLETE ==========");
                     break;
@@ -211,13 +240,15 @@ public class OrchestrationService(
                     {
                         try
                         {
-                            await kafkaToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cts.Token);
+                            await kafkaToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface,
+                                linkedCts.Token);
                         }
                         catch (Exception e)
                         {
                             logger.LogError(e, "KafkaToApiHandler.ExecuteAsync failed");
                         }
-                    });
+                    }, cts.Token);
 
                     logger.LogInformation("========== KAFKA TO API EXECUTION COMPLETE ==========");
                     break;
@@ -233,13 +264,15 @@ public class OrchestrationService(
                     {
                         try
                         {
-                            await kafkaToKafkaHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cts.Token);
+                            await kafkaToKafkaHandler.ExecuteAsync(publicationInterface, subscriptionInterface,
+                                linkedCts.Token);
                         }
                         catch (Exception e)
                         {
                             logger.LogError(e, "KafkaToKafkaHandler.ExecuteAsync failed");
                         }
-                    });
+                    }, cts.Token);
 
                     logger.LogInformation("========== KAFKA TO KAFKA EXECUTION COMPLETE ==========");
                     break;
@@ -256,13 +289,15 @@ public class OrchestrationService(
                     {
                         try
                         {
-                            await kafkaToDatabaseHandler.ExecuteAsync(publicationInterface, subscriptionInterface);
+                            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cts.Token);
+                            await kafkaToDatabaseHandler.ExecuteAsync(publicationInterface, subscriptionInterface,
+                                linkedCts.Token);
                         }
                         catch (Exception e)
                         {
                             logger.LogError(e, "KafkaToDatabaseHandler.ExecuteAsync failed");
                         }
-                    });
+                    }, cts.Token);
 
                     logger.LogInformation("========== KAFKA TO DATABASE EXECUTION COMPLETE ==========");
                     break;
@@ -278,14 +313,15 @@ public class OrchestrationService(
                     {
                         try
                         {
+                            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cts.Token);
                             await databaseToApiHandler.ExecuteAsync(publicationInterface, subscriptionInterface,
-                                config.ScheduleCron);
+                                config.ScheduleCron, linkedCts.Token);
                         }
                         catch (Exception e)
                         {
                             logger.LogError(e, "DatabaseToApiHandler.ExecuteAsync failed");
                         }
-                    });
+                    }, cts.Token);
 
                     logger.LogInformation("========== DATABASE TO API EXECUTION COMPLETE ==========");
                     break;
@@ -302,14 +338,15 @@ public class OrchestrationService(
                     {
                         try
                         {
+                            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cts.Token);
                             await databaseToKafkaHandler.ExecuteAsync(publicationInterface, subscriptionInterface,
-                                config.ScheduleCron);
+                                config.ScheduleCron, linkedCts.Token);
                         }
                         catch (Exception e)
                         {
                             logger.LogError(e, "DatabaseToKafkaHandler.ExecuteAsync failed");
                         }
-                    });
+                    }, cts.Token);
 
                     logger.LogInformation("========== DATABASE TO KAFKA EXECUTION COMPLETE ==========");
                     break;
@@ -326,14 +363,15 @@ public class OrchestrationService(
                     {
                         try
                         {
+                            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cts.Token);
                             await databaseToDatabaseHandler.ExecuteAsync(publicationInterface, subscriptionInterface,
-                                config.ScheduleCron);
+                                config.ScheduleCron, linkedCts.Token);
                         }
                         catch (Exception e)
                         {
                             logger.LogError(e, "DatabaseToDatabaseHandler.ExecuteAsync failed");
                         }
-                    });
+                    }, cts.Token);
 
                     logger.LogInformation("========== DATABASE TO DATABASE EXECUTION COMPLETE ==========");
                     break;
@@ -346,44 +384,7 @@ public class OrchestrationService(
         catch (Exception ex)
         {
             logger.LogError(ex, "Error in HandleIntegration for pattern {Pattern}", integrationPattern);
-        }
-    }
-
-    public static void StopScheduledTask(int sourceId, int targetId, string pattern)
-    {
-        switch (pattern)
-        {
-            case "DatabaseToDatabase":
-                DatabaseToDatabaseHandler.StopTask(sourceId, targetId);
-                break;
-
-            case "DatabaseToApi":
-                DatabaseToApiHandler.StopTask(sourceId, targetId);
-                break;
-
-            case "DatabaseToKafka":
-                DatabaseToKafkaHandler.StopTask(sourceId, targetId);
-                break;
-
-            case "ApiToDatabase":
-                ApiToDatabaseHandler.StopTask(sourceId, targetId);
-                break;
-
-            case "ApiToApi":
-                ApiToApiHandler.StopTask(sourceId, targetId);
-                break;
-
-            case "ApiToKafka":
-                ApiToKafkaHandler.StopTask(sourceId, targetId);
-                break;
-
-            case "KafkaToKafka":
-                KafkaToKafkaHandler.StopTask(sourceId, targetId);
-                break;
-
-
-            default:
-                break;
+            EngineMetrics.ActiveTasks.Dec();
         }
     }
 }

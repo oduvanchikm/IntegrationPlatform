@@ -1,8 +1,8 @@
 using IntegrationPlatform.Publication.API.Interfaces;
 using IntegrationPlatform.Publication.API.Metrics;
 using IntegrationPlatform.Publication.API.Services;
-using IntegrationPlatform.Publication.DataAccess;
 using IntegrationPlatform.Publication.DataAccess.DatabaseConnection;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Prometheus;
 using Serilog;
@@ -23,8 +23,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddPublicationDbContext(
-    builder.Configuration.GetConnectionString("PublicationDbContext"));
 
 builder.Services.AddDbContextFactory<PublicationDbContext>(options =>
 {
@@ -41,26 +39,33 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<PublicationDbContext>();
     dbContext.Database.EnsureCreated();
 
-    UpdatePublicationMetrics(dbContext);
+    await UpdatePublicationMetricsAsync(dbContext, CancellationToken.None);
 }
+
+var cts = new CancellationTokenSource();
+AppDomain.CurrentDomain.ProcessExit += (s, e) => cts.Cancel();
 
 _ = Task.Run(async () =>
 {
-    while (true)
+    while (!cts.Token.IsCancellationRequested)
     {
-        await Task.Delay(30000);
+        await Task.Delay(30000, cts.Token);
         try
         {
             using var scope = app.Services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<PublicationDbContext>();
-            UpdatePublicationMetrics(dbContext);
+            await UpdatePublicationMetricsAsync(dbContext, cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            break;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error updating metrics: {ex.Message}");
         }
     }
-});
+}, cts.Token);
 
 app.UseSwagger();
 app.UseSwaggerUI();
@@ -73,33 +78,33 @@ app.UseCors(policy => policy
 app.UseAuthorization();
 
 app.MapControllers();
-app.UseStaticFiles();
-app.MapGet("/", () => Results.Redirect("/index.html"));
-
-app.Urls.Add("http://0.0.0.0:8080");
 
 app.UseHttpMetrics();
 app.MapMetrics();
 
-app.Run();
+await app.RunAsync();
 
-void UpdatePublicationMetrics(PublicationDbContext dbContext)
+async Task UpdatePublicationMetricsAsync(PublicationDbContext dbContext, CancellationToken cancellationToken = default)
 {
-    var totalProducts = dbContext.Products.Count();
-    var totalInterfaces = dbContext.DataInterfaces.Count();
+    var totalProducts = await dbContext.Products.CountAsync(cancellationToken);
+    var totalInterfaces = await dbContext.DataInterfaces.CountAsync(cancellationToken);
     var activeInterfaces =
-        dbContext.DataInterfaces.Count(d => d.Status == IntegrationPlatform.Common.Enums.ConnectionStatus.Active);
+        await dbContext.DataInterfaces.CountAsync(d =>
+            d.Status == IntegrationPlatform.Common.Enums.ConnectionStatus.Active, cancellationToken);
     var draftInterfaces =
-        dbContext.DataInterfaces.Count(d => d.Status == IntegrationPlatform.Common.Enums.ConnectionStatus.Draft);
-    var deprecatedInterfaces =
-        dbContext.DataInterfaces.Count(d => d.Status == IntegrationPlatform.Common.Enums.ConnectionStatus.Deprecated);
-
+        await dbContext.DataInterfaces.CountAsync(d =>
+            d.Status == IntegrationPlatform.Common.Enums.ConnectionStatus.Draft, cancellationToken);
+    var deprecatedInterfaces = await dbContext.DataInterfaces.CountAsync(d =>
+        d.Status == IntegrationPlatform.Common.Enums.ConnectionStatus.Deprecated, cancellationToken);
     var apiInterfaces =
-        dbContext.DataInterfaces.Count(d => d.InterfaceType == IntegrationPlatform.Common.Enums.InterfaceType.Api);
+        await dbContext.DataInterfaces.CountAsync(d =>
+            d.InterfaceType == IntegrationPlatform.Common.Enums.InterfaceType.Api, cancellationToken);
     var kafkaInterfaces =
-        dbContext.DataInterfaces.Count(d => d.InterfaceType == IntegrationPlatform.Common.Enums.InterfaceType.Kafka);
+        await dbContext.DataInterfaces.CountAsync(d =>
+            d.InterfaceType == IntegrationPlatform.Common.Enums.InterfaceType.Kafka, cancellationToken);
     var databaseInterfaces =
-        dbContext.DataInterfaces.Count(d => d.InterfaceType == IntegrationPlatform.Common.Enums.InterfaceType.Db);
+        await dbContext.DataInterfaces.CountAsync(d =>
+            d.InterfaceType == IntegrationPlatform.Common.Enums.InterfaceType.Db, cancellationToken);
 
     PublicationMetrics.TotalProducts.Set(totalProducts);
     PublicationMetrics.TotalInterfaces.Set(totalInterfaces);

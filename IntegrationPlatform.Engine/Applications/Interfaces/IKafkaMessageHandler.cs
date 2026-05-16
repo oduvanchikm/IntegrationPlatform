@@ -1,6 +1,6 @@
 namespace IntegrationPlatform.Engine.Applications.Interfaces;
 
-interface IKafkaMessageHandler
+public interface IKafkaMessageHandler
 {
     Task HandleMessageAsync(string json);
 }

@@ -2,9 +2,9 @@ using IntegrationPlatform.Common.Models;
 
 namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
 
-public class ApiReader(ILogger<ApiReader> logger)
+public class ApiReader(ILogger<ApiReader> logger, IHttpClientFactory httpClientFactory)
 {
-    private readonly HttpClient _httpClient = new();
+    private readonly HttpClient _httpClient = httpClientFactory.CreateClient("ApiClient");
 
     public async Task<string> ReadFromApiAsync(ApiInterface apiInterface)
     {

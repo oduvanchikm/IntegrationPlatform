@@ -1,7 +1,6 @@
 using Confluent.Kafka;
 using IntegrationPlatform.Engine.Applications.Interfaces;
 using IntegrationPlatform.Engine.Metrics;
-using Prometheus;
 
 namespace IntegrationPlatform.Engine.Applications.Kafka;
 
@@ -12,21 +11,6 @@ public class KafkaConsumer(
     : BackgroundService
 {
     private const int ReconnectDelayMs = 5000;
-
-    private static readonly Gauge KafkaConsumerLag = Prometheus.Metrics
-        .CreateGauge("engine_kafka_consumer_lag",
-            "Current consumer lag for Kafka topic",
-            new GaugeConfiguration { LabelNames = new[] { "topic", "partition" } });
-
-    private static readonly Counter MessagesConsumed = Prometheus.Metrics
-        .CreateCounter("engine_kafka_messages_consumed_total",
-            "Total messages consumed from Kafka",
-            new CounterConfiguration { LabelNames = new[] { "topic" } });
-
-    private static readonly Counter ConsumerErrors = Prometheus.Metrics
-        .CreateCounter("engine_kafka_consumer_errors_total",
-            "Total consumer errors",
-            new CounterConfiguration { LabelNames = new[] { "topic", "error_type" } });
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -88,14 +72,14 @@ public class KafkaConsumer(
                     catch (ConsumeException ex)
                     {
                         logger.LogError(ex, "Kafka consume error: {Reason}", ex.Error.Reason);
-                        ConsumerErrors.WithLabels(topic, "consume_error").Inc();
+                        EngineMetrics.ConsumerErrors.WithLabels(topic, "consume_error").Inc();
 
                         EngineMetrics.ProcessingErrors.WithLabels("kafka", "consume_error").Inc();
                     }
                     catch (Exception ex)
                     {
                         logger.LogError(ex, "Error processing message");
-                        ConsumerErrors.WithLabels(topic, "processing_error").Inc();
+                        EngineMetrics.ConsumerErrors.WithLabels(topic, "processing_error").Inc();
                         EngineMetrics.ProcessingErrors.WithLabels("kafka", "processing_error").Inc();
                     }
                 }
@@ -108,7 +92,7 @@ public class KafkaConsumer(
             catch (Exception ex)
             {
                 logger.LogError(ex, "Kafka connection failed. Retrying in {Delay} ms...", ReconnectDelayMs);
-                ConsumerErrors.WithLabels("unknown", "connection_error").Inc();
+                EngineMetrics.ConsumerErrors.WithLabels("unknown", "connection_error").Inc();
 
                 await Task.Delay(ReconnectDelayMs, stoppingToken);
             }

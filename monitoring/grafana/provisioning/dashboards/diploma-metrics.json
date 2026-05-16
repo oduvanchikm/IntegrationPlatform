@@ -384,7 +384,7 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "line"
+              "mode": "dashed"
             }
           },
           "mappings": [],
@@ -624,7 +624,7 @@
         {
           "editorMode": "code",
           "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
-          "legendFormat": "metric_value",
+          "legendFormat": "metric-value",
           "range": true,
           "refId": "A"
         }
@@ -673,7 +673,7 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "off"
+              "mode": "dashed"
             }
           },
           "mappings": [],
@@ -687,7 +687,11 @@
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 85
+              },
+              {
+                "color": "#EAB839",
+                "value": 95
               }
             ]
           },
@@ -914,23 +918,31 @@
       "pluginVersion": "12.4.2",
       "targets": [
         {
-          "expr": "rate(publication_errors_total[5m])",
+          "editorMode": "code",
+          "expr": "sum(rate(publication_errors_total[5m])) by (service)",
           "legendFormat": "Publication API",
+          "range": true,
           "refId": "A"
         },
         {
-          "expr": "rate(engine_processing_errors_total[5m])",
+          "editorMode": "code",
+          "expr": "sum(rate(engine_processing_errors_total[5m])) by (pattern, error_type)",
           "legendFormat": "Engine",
+          "range": true,
           "refId": "B"
         },
         {
-          "expr": "rate(engine_kafka_consumer_errors_total[5m])",
+          "editorMode": "code",
+          "expr": "sum(rate(engine_kafka_consumer_errors_total[5m])) by (topic, error_type)",
           "legendFormat": "Kafka Consumer",
+          "range": true,
           "refId": "C"
         },
         {
-          "expr": "rate(engine_kafka_produce_errors_total[5m])",
+          "editorMode": "code",
+          "expr": "sum(rate(engine_kafka_produce_errors_total[5m])) by (topic, error_type)",
           "legendFormat": "Kafka Producer",
+          "range": true,
           "refId": "D"
         }
       ],
@@ -1024,10 +1036,10 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "rate(engine_events_processed_total[1m])",
+          "expr": "sum(rate(engine_events_processed_total[1m])) by (pattern)",
           "format": "time_series",
           "instant": false,
-          "legendFormat": "metric_value",
+          "legendFormat": "{{pattern}}",
           "range": true,
           "refId": "A"
         }

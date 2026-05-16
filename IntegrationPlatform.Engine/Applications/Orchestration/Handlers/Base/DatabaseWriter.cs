@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using IntegrationPlatform.Common.Models;
 using Npgsql;
 
@@ -5,7 +6,7 @@ namespace IntegrationPlatform.Engine.Applications.Orchestration.Handlers.Base;
 
 public class DatabaseWriter(ILogger<DatabaseWriter> logger)
 {
-    private static bool _tableInitialized = false;
+    private static readonly ConcurrentDictionary<string, bool> _tablesInitialized = new();
 
     public async Task WriteBatchAsync(DatabaseInterface dbInterface, List<string> messages)
     {
@@ -25,8 +26,10 @@ public class DatabaseWriter(ILogger<DatabaseWriter> logger)
         {
             await using var conn = new NpgsqlConnection(connString);
             await conn.OpenAsync();
+            
+            var tableKey = $"{dbInterface.DatabaseName}:{dbInterface.Scheme}.data";
 
-            if (!_tableInitialized)
+            if (!_tablesInitialized.ContainsKey(tableKey))
             {
                 var createTableSql = $@"
                     CREATE TABLE IF NOT EXISTS {dbInterface.Scheme}.data (
@@ -36,7 +39,7 @@ public class DatabaseWriter(ILogger<DatabaseWriter> logger)
                     )";
                 await using var createCmd = new NpgsqlCommand(createTableSql, conn);
                 await createCmd.ExecuteNonQueryAsync();
-                _tableInitialized = true;
+                _tablesInitialized[tableKey] = true;
                 logger.LogInformation("Table {Schema}.data initialized", dbInterface.Scheme);
             }
 

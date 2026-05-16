@@ -8,6 +8,5 @@ public interface ISubscriptionService
     Task<ConnectionResult> CreateOrchestrationConfigAsync(ConnectionRequest request);
     Task<List<OrchestrationConfig>> GetAllConnectionsAsync();
     Task<ConnectionResult> DeleteConnectionAsync(int orchestrationConfigId);
-    Task<List<object>> GetAllInterfacesAsync();
-    Task<InterfaceDetailsDto?> GetInterfaceByIdAsync(int id);
+    Task<bool> CheckDatabaseHealthAsync();
 }

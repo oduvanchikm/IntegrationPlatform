@@ -8,16 +8,17 @@ using Microsoft.EntityFrameworkCore;
 namespace IntegrationPlatform.Subscription.API.Services;
 
 public class SubscriptionService(
-    SubscriptionDbContext context,
+    IDbContextFactory<SubscriptionDbContext> dbContextFactory,
     ILogger<SubscriptionService> logger,
-    PublicationDbContext publicationContext,
-    IHttpClientFactory httpClientFactory)
+    PublicationDbContext publicationContext)
     : ISubscriptionService
 {
     public async Task<ConnectionResult> CreateOrchestrationConfigAsync(ConnectionRequest request)
     {
         try
         {
+            await using var context = await dbContextFactory.CreateDbContextAsync();
+
             logger.LogInformation("Creating orchestration config for PubId: {PubId}, SubId: {SubId}",
                 request.PublicationInterfaceId, request.SubscriptionInterfaceId);
 
@@ -35,8 +36,6 @@ public class SubscriptionService(
                         $"Consumer interface {request.SubscriptionInterfaceId} not found in subscription database. Please create it first."
                 };
             }
-
-            // var sourceInterface = await FetchSourceInterfaceFromSearchApi(request.PublicationInterfaceId);
 
             var sourceInterface = await publicationContext.DataInterfaces
                 .FirstOrDefaultAsync(di => di.Id == request.PublicationInterfaceId);
@@ -85,98 +84,9 @@ public class SubscriptionService(
         }
     }
 
-    public async Task<List<object>> GetAllInterfacesAsync()
-    {
-        try
-        {
-            var interfaces = await context.DataInterfaces
-                .Include(di => di.Product)
-                .Select(di => new
-                {
-                    di.Id,
-                    di.Name,
-                    di.Description,
-                    di.InterfaceType,
-                    di.Status,
-                    ProductName = di.Product != null ? di.Product.NameProduct : null,
-                    ProductId = di.ProductId
-                })
-                .ToListAsync();
-
-            return interfaces.Cast<object>().ToList();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error getting all interfaces");
-            throw;
-        }
-    }
-
-    public async Task<InterfaceDetailsDto?> GetInterfaceByIdAsync(int id)
-    {
-        try
-        {
-            logger.LogInformation("Getting interface by ID {Id} from subscription database", id);
-
-            var interfaceNew = await context.DataInterfaces
-                .Include(di => di.Product)
-                .FirstOrDefaultAsync(di => di.Id == id);
-
-            if (interfaceNew == null)
-            {
-                logger.LogWarning("Interface with ID {Id} not found in subscription database", id);
-                return null;
-            }
-
-            var dto = new InterfaceDetailsDto
-            {
-                Id = interfaceNew.Id,
-                Name = interfaceNew.Name,
-                Description = interfaceNew.Description ?? "",
-                InterfaceType = interfaceNew.InterfaceType.ToString(),
-                InterfaceTypeCode = (int)interfaceNew.InterfaceType,
-                Status = interfaceNew.Status.ToString(),
-                ProductId = interfaceNew.ProductId,
-                ProductName = interfaceNew.Product?.NameProduct ?? "Unknown"
-            };
-
-            switch (interfaceNew)
-            {
-                case ApiInterface api:
-                    dto.Host = api.Host;
-                    dto.Port = api.Port;
-                    dto.Endpoint = api.Endpoint;
-                    dto.Token = api.Token;
-                    dto.Username = api.Username;
-                    break;
-
-                case KafkaInterface kafka:
-                    dto.BootstrapServers = kafka.BootstrapServers;
-                    dto.TopicName = kafka.TopicName;
-                    dto.Username = kafka.Username;
-                    break;
-
-                case DatabaseInterface db:
-                    dto.Host = db.Host;
-                    dto.Port = db.Port;
-                    dto.DatabaseName = db.DatabaseName;
-                    dto.Scheme = db.Scheme;
-                    dto.Username = db.Username;
-                    break;
-            }
-
-            return dto;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error getting interface by ID {Id}", id);
-            throw;
-        }
-    }
-
-
     public async Task<List<OrchestrationConfig>> GetAllConnectionsAsync()
     {
+        await using var context = await dbContextFactory.CreateDbContextAsync();
         return await context.OrchestrationConfigs
             .Include(oc => oc.DataInterface)
             .ToListAsync();
@@ -186,6 +96,7 @@ public class SubscriptionService(
     {
         try
         {
+            await using var context = await dbContextFactory.CreateDbContextAsync();
             var config = await context.OrchestrationConfigs
                 .FirstOrDefaultAsync(oc => oc.Id == orchestrationConfigId);
 
@@ -197,9 +108,6 @@ public class SubscriptionService(
                     Error = "Connection not found"
                 };
             }
-
-            await StopEngineTask(config.InterfacePublicationId, config.InterfaceSubscriptionId,
-                config.IntegrationPattern.ToString());
 
             context.OrchestrationConfigs.Remove(config);
             await context.SaveChangesAsync();
@@ -213,23 +121,18 @@ public class SubscriptionService(
         }
     }
 
-    private async Task StopEngineTask(int sourceId, int targetId, string pattern)
+    public async Task<bool> CheckDatabaseHealthAsync()
     {
         try
         {
-            var httpClient = httpClientFactory.CreateClient("EngineApi");
-            var response =
-                await httpClient.PostAsync(
-                    $"/api/engine/stop-task?sourceId={sourceId}&targetId={targetId}&pattern={pattern}", null);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                logger.LogWarning("Failed to stop engine task for {SourceId}→{TargetId}", sourceId, targetId);
-            }
+            await using var context = await dbContextFactory.CreateDbContextAsync();
+            var canConnect = await context.Database.CanConnectAsync();
+            return canConnect;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error stopping engine task");
+            logger.LogError(ex, "Database health check failed");
+            return false;
         }
     }
 }
